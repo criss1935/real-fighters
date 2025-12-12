@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { Users, Calendar, Trophy, Plus, LogOut, UserCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase'
-import { supabaseAdmin } from '@/lib/supabase-admin'
 import { useRouter } from 'next/navigation'
 
 export default function AdminPage() {
@@ -69,10 +68,10 @@ export default function AdminPage() {
   async function loadStats() {
     try {
       const [fightersRes, eventsRes, fightsRes, activeRes] = await Promise.all([
-        supabaseAdmin.from('fighters').select('id', { count: 'exact', head: true }),
-        supabaseAdmin.from('events').select('id', { count: 'exact', head: true }),
-        supabaseAdmin.from('fights').select('id', { count: 'exact', head: true }),
-        supabaseAdmin.from('fighters').select('id', { count: 'exact', head: true }).eq('is_active', true)
+        supabase.from('fighters').select('id', { count: 'exact', head: true }),
+        supabase.from('events').select('id', { count: 'exact', head: true }),
+        supabase.from('fights').select('id', { count: 'exact', head: true }),
+        supabase.from('fighters').select('id', { count: 'exact', head: true }).eq('is_active', true)
       ])
       
       setStats({
@@ -87,12 +86,12 @@ export default function AdminPage() {
   }
 
   async function loadEvents() {
-    const { data } = await supabaseAdmin.from('events').select('*').order('event_date', { ascending: false })
+    const { data } = await supabase.from('events').select('*').order('event_date', { ascending: false })
     setEvents(data || [])
   }
 
   async function loadFighters() {
-    const { data } = await supabaseAdmin.from('fighters').select('*').eq('is_active', true).order('name')
+    const { data } = await supabase.from('fighters').select('*').eq('is_active', true).order('name')
     setFighters(data || [])
   }
 
@@ -106,7 +105,7 @@ export default function AdminPage() {
     setMessage(null)
 
     try {
-      const { error } = await supabaseAdmin.from('fighters').insert({
+      const { error } = await supabase.from('fighters').insert({
         name: fighterForm.name,
         nickname: fighterForm.nickname || null,
         division: fighterForm.division || null,
@@ -131,7 +130,7 @@ export default function AdminPage() {
     setMessage(null)
 
     try {
-      const { error } = await supabaseAdmin.from('events').insert({
+      const { error } = await supabase.from('events').insert({
         name: eventForm.name,
         org: eventForm.org || null,
         event_date: eventForm.event_date || null,
@@ -155,7 +154,7 @@ export default function AdminPage() {
 
     try {
       // Crear pelea
-      const { error } = await supabaseAdmin.from('fights').insert({
+      const { error } = await supabase.from('fights').insert({
         event_id: parseInt(fightForm.event_id),
         red_fighter_id: parseInt(fightForm.red_fighter_id),
         blue_fighter_id: parseInt(fightForm.blue_fighter_id),
@@ -167,7 +166,7 @@ export default function AdminPage() {
       if (error) throw error
 
       // Refrescar vista materializada para actualizar récords
-      await supabaseAdmin.rpc('refresh_fighter_records')
+      await supabase.rpc('refresh_fighter_records')
 
       setMessage({ type: 'success', text: '✅ Combate registrado y récords actualizados' })
       setFightForm({ 
