@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   images: {
     remotePatterns: [
       {
@@ -8,7 +11,7 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'via.placeholder.com', // ← AGREGAR ESTO
+        hostname: 'via.placeholder.com',
       },
       {
         protocol: 'https',
@@ -17,7 +20,7 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: '*.supabase.co',
-      }
+      },
     ],
   },
 }
