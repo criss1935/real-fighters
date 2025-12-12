@@ -79,8 +79,22 @@ export default function StudentsPage() {
   }, [searchTerm, selectedDiscipline, selectedGym, students])
 
   // Obtener valores únicos para los filtros
-  const disciplines = Array.from(new Set(students.map(s => s.discipline).filter(Boolean)))
-  const gyms = Array.from(new Set(students.map(s => s.gym).filter(Boolean)))
+const disciplines = Array.from(
+  new Set(
+    students
+      .map(s => s.discipline)
+      .filter((d): d is string => d !== null)
+  )
+)
+
+const gyms = Array.from(
+  new Set(
+    students
+      .map(s => s.gym)
+      .filter((g): g is string => g !== null)
+  )
+)
+
 
   if (loading) {
     return (
@@ -161,7 +175,7 @@ export default function StudentsPage() {
           </div>
         )}
         
-        /* Mensaje cuando no hay alumnos */
+        {/* Mensaje cuando no hay alumnos */}
         {students.length === 0 ? (
           <div className="bg-white rounded-lg shadow-md p-12 text-center">
             <div className="max-w-md mx-auto">
