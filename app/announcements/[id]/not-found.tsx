@@ -23,18 +23,3 @@ export default function NotFound() {
     </div>
   );
 }
-```
-
----
-
-## ✅ **¡LISTO! TODOS LOS ARCHIVOS COMPLETADOS**
-
-### **Resumen de lo que acabas de crear:**
-```
-✅ lib/upload-image.ts
-✅ components/RichTextEditor.tsx
-✅ app/admin/page.tsx (REEMPLAZADO)
-✅ app/page.tsx (REEMPLAZADO)
-✅ app/announcements/page.tsx
-✅ app/announcements/[id]/page.tsx
-✅ app/announcements/[id]/not-found.tsx
