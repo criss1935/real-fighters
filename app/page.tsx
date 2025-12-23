@@ -369,22 +369,14 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Footer con información real */}
+      {/* Footer */}
       <footer className="bg-gray-900 text-gray-300 py-12">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Info de la academia */}
-            <div>
-              <h3 className="text-white font-bold text-lg mb-4">Real Fighters</h3>
-              <p className="text-sm mb-4">
-                Portal profesional de peleadores de la academia. Récords verificados y actualizados.
-              </p>
-            </div>
-
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Dirección */}
             <div>
               <h3 className="text-white font-bold text-lg mb-4">Dirección</h3>
-              <p className="text-sm">
+              <p className="text-sm mb-4">
                 Calz. del Hueso 590, Coapa,<br />
                 Los Girasoles, Coyoacán, 04920<br />
                 Ciudad de México, CDMX
