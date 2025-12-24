@@ -30,6 +30,9 @@ export default function Header() {
   <Link href="/admin" className="hover:text-red-500 transition">
     Admin
   </Link>
+  <Link href="/clases" className="hover:text-red-500 transition">
+              Clases
+              </Link>
 </nav>
           <button className="md:hidden text-white">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
