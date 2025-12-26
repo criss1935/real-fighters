@@ -14,14 +14,15 @@ export interface ClassInfo {
   };
   icon: string;
   color: string;
+  imageUrl: string;
 }
 
 export const classes: ClassInfo[] = [
   {
     slug: 'mma-kids-a',
     name: 'MMA KIDS A',
-    shortDescription: 'Programa de artes marciales mixtas para los más pequeños',
-    fullDescription: 'Programa diseñado específicamente para introducir a los niños más pequeños al mundo de las artes marciales mixtas. Enfocado en disciplina, coordinación, respeto y diversión a través del ejercicio.',
+    shortDescription: 'Artes marciales mixtas formativas para los más pequeños',
+    fullDescription: 'Las artes marciales mixtas para niños combinan movimientos básicos de distintas disciplinas como boxeo, lucha y jiu jitsu. El enfoque es formativo y lúdico, desarrollando coordinación, equilibrio, fuerza básica y disciplina mediante juegos y ejercicios controlados, siempre en un entorno seguro y divertido.',
     ageRange: '4 hasta 8 años de edad',
     schedule: {
       days: 'Lunes / Miércoles / Viernes',
@@ -32,13 +33,14 @@ export const classes: ClassInfo[] = [
       inscription: '$1,000 (Nuevos) / $500 (Socios activos)'
     },
     icon: '🥋',
-    color: 'bg-blue-600'
+    color: 'bg-blue-600',
+    imageUrl: 'https://t4.ftcdn.net/jpg/03/30/83/73/360_F_330837380_teXdp7be7qbhLYqrQbxXlA4QYkvqKAE4.jpg'
   },
   {
     slug: 'box-kids-b',
     name: 'BOX KIDS B',
-    shortDescription: 'Boxeo para niños en etapa de crecimiento',
-    fullDescription: 'Programa de boxeo mexicano adaptado para niños. Desarrolla coordinación, velocidad, reflejos y disciplina. Los niños aprenden técnicas fundamentales del boxeo en un ambiente seguro y divertido.',
+    shortDescription: 'Boxeo enfocado en coordinación y disciplina',
+    fullDescription: 'El boxeo es un arte marcial basado en el uso técnico de los puños, el movimiento de pies y la defensa. En niños y jóvenes, el entrenamiento se enfoca en coordinación, reflejos, disciplina y condición física, evitando el contacto agresivo. Se trabajan golpes básicos, desplazamientos, esquivas y control corporal, promoviendo seguridad, autocontrol y respeto.',
     ageRange: '6 hasta 11 años de edad',
     schedule: {
       days: 'Lunes a Viernes',
@@ -49,13 +51,14 @@ export const classes: ClassInfo[] = [
       inscription: '$1,000 (Nuevos) / $500 (Socios activos)'
     },
     icon: '🥊',
-    color: 'bg-red-600'
+    color: 'bg-red-600',
+    imageUrl: 'https://media.istockphoto.com/id/896799182/photo/little-boy-training-boxing-with-punching-bag.jpg?s=612x612&w=0&k=20&c=WwXJwtZ1gPlF-0D5mOCxS7uhvD1Yitdibyvy0RK1qTM='
   },
   {
     slug: 'mma-juvenil-a',
     name: 'MMA JUVENIL A',
-    shortDescription: 'Artes marciales mixtas para jóvenes principiantes',
-    fullDescription: 'Programa de MMA para jóvenes que integra striking, grappling y defensa personal. Enfocado en técnica, condición física y formación de carácter. Los estudiantes aprenden disciplina y respeto mientras desarrollan habilidades de combate.',
+    shortDescription: 'Fundamentos estructurados de artes marciales mixtas',
+    fullDescription: 'El MMA juvenil introduce a los jóvenes en las artes marciales mixtas de forma estructurada. Se enseñan fundamentos de golpeo, derribos y control en el suelo, priorizando técnica, acondicionamiento físico y disciplina, sin exponerlos a riesgos innecesarios.',
     ageRange: '12 hasta 15 años de edad',
     schedule: {
       days: 'Lunes / Miércoles / Viernes',
@@ -66,13 +69,14 @@ export const classes: ClassInfo[] = [
       inscription: '$1,000 (Nuevos) / $500 (Socios activos)'
     },
     icon: '🥋',
-    color: 'bg-purple-600'
+    color: 'bg-purple-600',
+    imageUrl: 'https://img.freepik.com/free-photo/male-fighter-action-leg-kicking_613910-11746.jpg?semt=ais_hybrid&w=740&q=80'
   },
   {
     slug: 'mma-juvenil-b',
     name: 'MMA JUVENIL B',
-    shortDescription: 'MMA avanzado para jóvenes competidores',
-    fullDescription: 'Programa avanzado de MMA para jóvenes con experiencia. Incluye técnicas avanzadas de striking, wrestling, Brazilian Jiu-Jitsu y preparación para competencias amateur. Entrenamientos intensivos con enfoque en estrategia de combate.',
+    shortDescription: 'Entrenamiento técnico y competitivo avanzado',
+    fullDescription: 'Entrenamiento de MMA con enfoque más técnico y competitivo. Se profundiza en estrategia, combinaciones, lucha y grappling, mejorando resistencia, fuerza mental y preparación deportiva, siempre bajo supervisión y control.',
     ageRange: '15 hasta 17 años de edad',
     schedule: {
       days: 'Lunes / Miércoles / Viernes',
@@ -83,13 +87,14 @@ export const classes: ClassInfo[] = [
       inscription: '$1,000 (Nuevos) / $500 (Socios activos)'
     },
     icon: '🥋',
-    color: 'bg-indigo-600'
+    color: 'bg-indigo-600',
+    imageUrl: 'https://images8.alphacoders.com/746/thumb-1920-746423.jpg'
   },
   {
     slug: 'mma-adultos',
     name: 'MMA ADULTOS',
-    shortDescription: 'Artes marciales mixtas para adultos de todos los niveles',
-    fullDescription: 'Programa completo de MMA para adultos que combina técnicas de boxeo, Muay Thai, wrestling y Brazilian Jiu-Jitsu. Ideal tanto para principiantes como para peleadores avanzados. Incluye acondicionamiento físico intensivo, técnica de striking y grappling, y sparring controlado.',
+    shortDescription: 'Sistema completo de combate mixto',
+    fullDescription: 'Las artes marciales mixtas integran distintas disciplinas de combate en un solo sistema. El entrenamiento para adultos combina boxeo, patadas, lucha y jiu jitsu, enfocándose en condición física, técnica, defensa personal y, para quien lo desea, preparación competitiva.',
     ageRange: '18 años de edad en adelante',
     schedule: {
       days: 'Lunes / Miércoles / Viernes',
@@ -100,13 +105,14 @@ export const classes: ClassInfo[] = [
       inscription: '$1,000 (Nuevos) / $500 (Socios activos)'
     },
     icon: '🥋',
-    color: 'bg-red-700'
+    color: 'bg-red-700',
+    imageUrl: 'https://media.cnn.com/api/v1/images/stellar/prod/gettyimages-1448248356.jpg?c=original&q=h_447,c_fill'
   },
   {
     slug: 'muay-thai',
     name: 'MUAY THAI',
     shortDescription: 'El arte de las ocho extremidades',
-    fullDescription: 'Muay Thai tradicional tailandés, conocido como "el arte de las ocho extremidades". Aprende técnicas de puños, codos, rodillas y patadas. Excelente para defensa personal, acondicionamiento cardiovascular y desarrollo de poder explosivo. Incluye trabajo de pads, clinch y sparring.',
+    fullDescription: 'Conocido como el arte de las ocho extremidades, el Muay Thai utiliza puños, codos, rodillas y piernas. El entrenamiento se enfoca en potencia, resistencia, técnica y fortaleza mental, desarrollando un cuerpo fuerte y disciplinado, ideal tanto para defensa personal como para competencia.',
     ageRange: '11 años de edad en adelante',
     schedule: {
       days: 'Martes / Jueves / Sábado',
@@ -117,13 +123,14 @@ export const classes: ClassInfo[] = [
       inscription: '$1,000 (Nuevos) / $500 (Socios activos)'
     },
     icon: '🦵',
-    color: 'bg-yellow-600'
+    color: 'bg-yellow-600',
+    imageUrl: 'https://images.unsplash.com/photo-1729673517080-44353fa68fe0?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8bXVheSUyMHRoYWl8ZW58MHx8MHx8fDA%3D  '
   },
   {
     slug: 'bjj',
     name: 'BJJ (JIU JITSU BRASILEÑO)',
-    shortDescription: 'El arte suave del combate en el suelo',
-    fullDescription: 'Brazilian Jiu-Jitsu, arte marcial especializado en combate en el suelo y sumisiones. Aprende llaves, estrangulaciones, barridos y control posicional. Ideal para defensa personal ya que permite a personas más pequeñas defenderse de oponentes más grandes usando técnica y apalancamiento.',
+    shortDescription: 'El arte del combate en el suelo',
+    fullDescription: 'Arte marcial especializado en el combate en el suelo, basado en palancas, control y sumisiones. Permite que una persona de menor tamaño pueda defenderse y controlar a un oponente más grande, desarrollando técnica, estrategia, paciencia y control emocional.',
     ageRange: '11 años de edad en adelante',
     schedule: {
       days: 'Martes y Jueves',
@@ -134,13 +141,14 @@ export const classes: ClassInfo[] = [
       inscription: '$1,000 (Nuevos) / $500 (Socios activos)'
     },
     icon: '🤼',
-    color: 'bg-blue-700'
+    color: 'bg-blue-700',
+    imageUrl: 'https://media.istockphoto.com/id/1134128200/photo/brazilain-jiu-jitsu-bjj-fighters-in-training-sparing-open-x-guard.jpg?b=1&s=612x612&w=0&k=20&c=PEN8pGo2W2a5CsmXRTuBgoLN00J9oV98fJkqtcKZvno='
   },
   {
     slug: 'boxeo-mexicano',
     name: 'BOXEO MEXICANO',
     shortDescription: 'La noble arte de los puños',
-    fullDescription: 'Boxeo mexicano tradicional, enfocado en técnica depurada, trabajo de pies, combinaciones rápidas y potencia. Desarrolla coordinación mano-ojo, velocidad, reflejos y acondicionamiento cardiovascular superior. Incluye trabajo de sombra, saco, pads y sparring técnico.',
+    fullDescription: 'El boxeo es un arte marcial basado en el uso técnico de los puños, el movimiento de pies y la defensa. El entrenamiento se enfoca en coordinación, reflejos, disciplina y condición física. Se trabajan golpes básicos, desplazamientos, esquivas y control corporal, promoviendo seguridad, autocontrol y respeto.',
     ageRange: '10 años de edad en adelante',
     schedule: {
       days: 'Lunes a Viernes',
@@ -151,13 +159,14 @@ export const classes: ClassInfo[] = [
       inscription: '$1,000 (Nuevos) / $500 (Socios activos)'
     },
     icon: '🥊',
-    color: 'bg-green-600'
+    color: 'bg-green-600',
+    imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQOxsncZkqAz1M1KW_Kk9CoLjoer3Po2ah6Mw&s'
   },
   {
     slug: 'crossfit',
     name: 'CROSSFIT',
-    shortDescription: 'Acondicionamiento funcional de alta intensidad',
-    fullDescription: 'Programa de acondicionamiento físico funcional que combina levantamiento olímpico, gimnasia y ejercicios metabólicos. Diseñado para mejorar fuerza, resistencia, flexibilidad, velocidad y coordinación. Ideal como complemento para peleadores o para personas que buscan estar en forma física superior.',
+    shortDescription: 'Entrenamiento funcional de alta intensidad',
+    fullDescription: 'Sistema de entrenamiento funcional de alta intensidad. Mejora fuerza, resistencia, movilidad y acondicionamiento general, siendo un excelente complemento para las artes marciales y la preparación física integral.',
     ageRange: '11 años de edad en adelante',
     schedule: {
       days: 'Lunes a Sábado',
@@ -168,6 +177,7 @@ export const classes: ClassInfo[] = [
       inscription: '$1,000 (Nuevos) / $500 (Socios activos)'
     },
     icon: '💪',
-    color: 'bg-orange-600'
+    color: 'bg-orange-600',
+    imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTvLz6zpVSIJCa0nNsWpciGKDA63m7mJDyjvA&s'
   }
 ];

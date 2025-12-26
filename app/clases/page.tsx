@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { classes } from '@/lib/classes-data';
+import { classes } from '../../lib/classes-data';
+import Image from 'next/image';
 
 export default function ClasesPage() {
   return (
@@ -24,9 +25,18 @@ export default function ClasesPage() {
                 href={`/clases/${clase.slug}`}
                 className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition group"
               >
-                <div className={`${clase.color} h-24 flex items-center justify-center text-6xl`}>
-                  {clase.icon}
+                {/* Imagen */}
+                <div className="relative h-48 overflow-hidden">
+                  <img
+                    src={clase.imageUrl}
+                    alt={clase.name}
+                    className="w-full h-full object-cover group-hover:scale-110 transition duration-300"
+                  />
+                  <div className={`absolute top-4 right-4 ${clase.color} text-white px-3 py-1 rounded-full text-3xl`}>
+                    {clase.icon}
+                  </div>
                 </div>
+
                 <div className="p-6">
                   <h2 className="text-2xl font-bold text-gray-900 mb-2 group-hover:text-red-600 transition">
                     {clase.name}
