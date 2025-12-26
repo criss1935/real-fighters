@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Calendar, Trophy, Plus, LogOut, UserCircle, Newspaper, Eye, Trash2, Edit } from 'lucide-react';
+import { Users, Calendar, Trophy, Plus, LogOut, UserCircle, Newspaper, Eye, Trash2, Edit, X, Upload } from 'lucide-react';
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import RichTextEditor from '@/components/RichTextEditor';
-import { uploadImage, validateImageFile } from '@/lib/upload-image';
+import { uploadImage, validateImageFile, deleteImage } from '@/lib/upload-image';
 
 export default function AdminPage() {
   const router = useRouter()
@@ -17,10 +17,27 @@ export default function AdminPage() {
   const [stats, setStats] = useState({ fighters: 0, events: 0, fights: 0, activeFighters: 0, announcements: 0 })
   
   // Fighter form
-  const [fighterForm, setFighterForm] = useState({ name: '', nickname: '', division: '', gym: '' })
+  const [fighterForm, setFighterForm] = useState({ 
+    id: null as number | null,
+    name: '', 
+    nickname: '', 
+    division: '', 
+    gym: '',
+    photo_url: '',
+    is_active: true
+  })
+  const [fighterImageFile, setFighterImageFile] = useState<File | null>(null)
+  const [fighterImagePreview, setFighterImagePreview] = useState<string>('')
+  const [uploadingFighterImage, setUploadingFighterImage] = useState(false)
   
   // Event form
-  const [eventForm, setEventForm] = useState({ name: '', org: '', event_date: '', location: '' })
+  const [eventForm, setEventForm] = useState({ 
+    id: null as number | null,
+    name: '', 
+    org: '', 
+    event_date: '', 
+    location: '' 
+  })
   
   // Fight form
   const [fightForm, setFightForm] = useState({ 
@@ -44,6 +61,7 @@ export default function AdminPage() {
   // Lists for dropdowns
   const [events, setEvents] = useState<any[]>([])
   const [fighters, setFighters] = useState<any[]>([])
+  const [allFighters, setAllFighters] = useState<any[]>([]) // Todos los fighters (activos e inactivos)
   const [announcements, setAnnouncements] = useState<any[]>([])
   
   // Messages
@@ -61,6 +79,7 @@ export default function AdminPage() {
       loadStats()
       loadEvents()
       loadFighters()
+      loadAllFighters()
       loadAnnouncements()
     }
   }, [user])
@@ -117,6 +136,11 @@ export default function AdminPage() {
     setFighters(data || [])
   }
 
+  async function loadAllFighters() {
+    const { data } = await supabase.from('fighters').select('*').order('name')
+    setAllFighters(data || [])
+  }
+
   async function loadAnnouncements() {
     const { data } = await supabase.from('announcements').select('*').order('created_at', { ascending: false })
     setAnnouncements(data || [])
@@ -127,47 +151,211 @@ export default function AdminPage() {
     router.push('/login')
   }
 
-  async function handleCreateFighter(e: React.FormEvent) {
+  // ============================================
+  // FUNCIONES PARA FIGHTERS
+  // ============================================
+
+  function handleFighterImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const validation = validateImageFile(file)
+    if (!validation.valid) {
+      alert(validation.error)
+      return
+    }
+
+    setFighterImageFile(file)
+    
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setFighterImagePreview(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  async function handleCreateOrUpdateFighter(e: React.FormEvent) {
     e.preventDefault()
     setMessage(null)
 
     try {
-      const { error } = await supabase.from('fighters').insert({
+      let photoUrl = fighterForm.photo_url
+
+      // Si hay nueva imagen, subirla
+      if (fighterImageFile) {
+        setUploadingFighterImage(true)
+        const uploadedUrl = await uploadImage(fighterImageFile, 'fighters-photos')
+        setUploadingFighterImage(false)
+        
+        if (!uploadedUrl) {
+          throw new Error('Error al subir la imagen')
+        }
+        
+        // Si había una imagen anterior, eliminarla
+        if (fighterForm.photo_url) {
+          await deleteImage(fighterForm.photo_url, 'fighters-photos')
+        }
+        
+        photoUrl = uploadedUrl
+      }
+
+      const fighterData = {
         name: fighterForm.name,
         nickname: fighterForm.nickname || null,
         division: fighterForm.division || null,
         gym: fighterForm.gym || null,
-        is_active: true,
+        photo_url: photoUrl || null,
+        is_active: fighterForm.is_active,
         discipline: 'MMA'
-      })
+      }
 
-      if (error) throw error
+      if (fighterForm.id) {
+        // Actualizar
+        const { error } = await supabase
+          .from('fighters')
+          .update(fighterData)
+          .eq('id', fighterForm.id)
 
-      setMessage({ type: 'success', text: '✅ Peleador creado exitosamente' })
-      setFighterForm({ name: '', nickname: '', division: '', gym: '' })
+        if (error) throw error
+        setMessage({ type: 'success', text: '✅ Peleador actualizado exitosamente' })
+      } else {
+        // Crear
+        const { error } = await supabase
+          .from('fighters')
+          .insert(fighterData)
+
+        if (error) throw error
+        setMessage({ type: 'success', text: '✅ Peleador creado exitosamente' })
+      }
+
+      // Resetear
+      setFighterForm({ id: null, name: '', nickname: '', division: '', gym: '', photo_url: '', is_active: true })
+      setFighterImageFile(null)
+      setFighterImagePreview('')
+      
       loadStats()
       loadFighters()
+      loadAllFighters()
     } catch (error: any) {
       setMessage({ type: 'error', text: `❌ Error: ${error.message}` })
     }
   }
 
-  async function handleCreateEvent(e: React.FormEvent) {
+  function handleEditFighter(fighter: any) {
+    setFighterForm({
+      id: fighter.id,
+      name: fighter.name,
+      nickname: fighter.nickname || '',
+      division: fighter.division || '',
+      gym: fighter.gym || '',
+      photo_url: fighter.photo_url || '',
+      is_active: fighter.is_active
+    })
+    setFighterImagePreview(fighter.photo_url || '')
+    setFighterImageFile(null)
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  async function handleDeleteFighter(id: number, photoUrl: string | null) {
+  if (!confirm('¿Estás seguro de eliminar este peleador? Esta acción no se puede deshacer.')) {
+    return
+  }
+
+  try {
+    // Intentar eliminar foto si existe (pero no bloquear si falla)
+    if (photoUrl && photoUrl.trim() !== '') {
+      try {
+        if (photoUrl.includes('fighters-photos')) {
+          await deleteImage(photoUrl, 'fighters-photos')
+        }
+      } catch (imageError) {
+        console.log('No se pudo eliminar la foto, pero continuamos:', imageError)
+        // No lanzamos el error, solo lo registramos
+      }
+    }
+
+    // Eliminar peleador de la base de datos
+    const { error } = await supabase
+      .from('fighters')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+
+    setMessage({ type: 'success', text: '✅ Peleador eliminado exitosamente' })
+    loadStats()
+    loadFighters()
+    loadAllFighters()
+  } catch (error: any) {
+    console.error('Error completo:', error)
+    setMessage({ type: 'error', text: `❌ Error al eliminar: ${error.message}` })
+  }
+}
+  async function handleToggleFighterActive(fighter: any) {
+    try {
+      const { error } = await supabase
+        .from('fighters')
+        .update({ is_active: !fighter.is_active })
+        .eq('id', fighter.id)
+
+      if (error) throw error
+
+      setMessage({ 
+        type: 'success', 
+        text: `✅ Peleador ${!fighter.is_active ? 'activado' : 'desactivado'} exitosamente` 
+      })
+      loadFighters()
+      loadAllFighters()
+      loadStats()
+    } catch (error: any) {
+      setMessage({ type: 'error', text: `❌ Error: ${error.message}` })
+    }
+  }
+
+  function cancelFighterEdit() {
+    setFighterForm({ id: null, name: '', nickname: '', division: '', gym: '', photo_url: '', is_active: true })
+    setFighterImageFile(null)
+    setFighterImagePreview('')
+  }
+
+  // ============================================
+  // FUNCIONES PARA EVENTS
+  // ============================================
+
+  async function handleCreateOrUpdateEvent(e: React.FormEvent) {
     e.preventDefault()
     setMessage(null)
 
     try {
-      const { error } = await supabase.from('events').insert({
+      const eventData = {
         name: eventForm.name,
         org: eventForm.org || null,
         event_date: eventForm.event_date || null,
         location: eventForm.location || null
-      })
+      }
 
-      if (error) throw error
+      if (eventForm.id) {
+        // Actualizar
+        const { error } = await supabase
+          .from('events')
+          .update(eventData)
+          .eq('id', eventForm.id)
 
-      setMessage({ type: 'success', text: '✅ Evento creado exitosamente' })
-      setEventForm({ name: '', org: '', event_date: '', location: '' })
+        if (error) throw error
+        setMessage({ type: 'success', text: '✅ Evento actualizado exitosamente' })
+      } else {
+        // Crear
+        const { error } = await supabase
+          .from('events')
+          .insert(eventData)
+
+        if (error) throw error
+        setMessage({ type: 'success', text: '✅ Evento creado exitosamente' })
+      }
+
+      // Resetear
+      setEventForm({ id: null, name: '', org: '', event_date: '', location: '' })
       loadStats()
       loadEvents()
     } catch (error: any) {
@@ -175,12 +363,52 @@ export default function AdminPage() {
     }
   }
 
+  function handleEditEvent(event: any) {
+    setEventForm({
+      id: event.id,
+      name: event.name,
+      org: event.org || '',
+      event_date: event.event_date || '',
+      location: event.location || ''
+    })
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  async function handleDeleteEvent(id: number) {
+    if (!confirm('¿Estás seguro de eliminar este evento? Esta acción no se puede deshacer.')) {
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('events')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+
+      setMessage({ type: 'success', text: '✅ Evento eliminado exitosamente' })
+      loadStats()
+      loadEvents()
+    } catch (error: any) {
+      setMessage({ type: 'error', text: `❌ Error: ${error.message}` })
+    }
+  }
+
+  function cancelEventEdit() {
+    setEventForm({ id: null, name: '', org: '', event_date: '', location: '' })
+  }
+
+  // ============================================
+  // FUNCIONES PARA FIGHTS (sin cambios)
+  // ============================================
+
   async function handleCreateFight(e: React.FormEvent) {
     e.preventDefault()
     setMessage(null)
 
     try {
-      // Crear pelea
       const { error } = await supabase.from('fights').insert({
         event_id: parseInt(fightForm.event_id),
         red_fighter_id: parseInt(fightForm.red_fighter_id),
@@ -192,7 +420,6 @@ export default function AdminPage() {
 
       if (error) throw error
 
-      // Refrescar vista materializada para actualizar récords
       await supabase.rpc('refresh_fighter_records')
 
       setMessage({ type: 'success', text: '✅ Combate registrado y récords actualizados' })
@@ -208,7 +435,7 @@ export default function AdminPage() {
   }
 
   // ============================================
-  // FUNCIONES PARA ANUNCIOS
+  // FUNCIONES PARA ANUNCIOS (sin cambios)
   // ============================================
 
   function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -223,7 +450,6 @@ export default function AdminPage() {
 
     setImageFile(file)
     
-    // Crear preview
     const reader = new FileReader()
     reader.onloadend = () => {
       setImagePreview(reader.result as string)
@@ -238,7 +464,6 @@ export default function AdminPage() {
     try {
       let imageUrl = announcementForm.featured_image_url
 
-      // Si hay una nueva imagen, subirla primero
       if (imageFile) {
         setUploadingImage(true)
         const uploadedUrl = await uploadImage(imageFile, 'announcement-images')
@@ -251,7 +476,6 @@ export default function AdminPage() {
         imageUrl = uploadedUrl
       }
 
-      // Generar excerpt si está vacío (primeros 150 caracteres del contenido sin HTML)
       let excerpt = announcementForm.excerpt
       if (!excerpt && announcementForm.content) {
         const tempDiv = document.createElement('div')
@@ -270,7 +494,6 @@ export default function AdminPage() {
       }
 
       if (announcementForm.id) {
-        // Actualizar anuncio existente
         const { error } = await supabase
           .from('announcements')
           .update(announcementData)
@@ -279,7 +502,6 @@ export default function AdminPage() {
         if (error) throw error
         setMessage({ type: 'success', text: '✅ Anuncio actualizado exitosamente' })
       } else {
-        // Crear nuevo anuncio
         const { error } = await supabase
           .from('announcements')
           .insert(announcementData)
@@ -288,7 +510,6 @@ export default function AdminPage() {
         setMessage({ type: 'success', text: '✅ Anuncio creado exitosamente' })
       }
 
-      // Resetear form
       setAnnouncementForm({
         id: null,
         title: '',
@@ -319,7 +540,6 @@ export default function AdminPage() {
     setImagePreview(announcement.featured_image_url || '')
     setImageFile(null)
     
-    // Scroll to form
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -413,7 +633,7 @@ export default function AdminPage() {
 
       {/* Stats Cards */}
       <div className="container mx-auto px-4 -mt-8">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -537,9 +757,50 @@ export default function AdminPage() {
             {/* FIGHTERS TAB */}
             {activeTab === 'fighters' && (
               <div>
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Crear Nuevo Peleador</h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-6">
+                  {fighterForm.id ? 'Editar Peleador' : 'Crear Nuevo Peleador'}
+                </h2>
 
-                <form onSubmit={handleCreateFighter} className="space-y-4">
+                <form onSubmit={handleCreateOrUpdateFighter} className="space-y-6">
+                  {/* Foto del peleador */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Foto del Peleador
+                    </label>
+                    <div className="space-y-3">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFighterImageSelect}
+                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
+                      />
+                      <p className="text-xs text-gray-500">
+                        JPG, PNG o WebP. Máximo 5MB. Recomendado: 400x400px
+                      </p>
+                      
+                      {fighterImagePreview && (
+                        <div className="relative inline-block">
+                          <img 
+                            src={fighterImagePreview} 
+                            alt="Preview" 
+                            className="w-32 h-32 object-cover rounded-lg border-2 border-gray-200"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFighterImageFile(null)
+                              setFighterImagePreview('')
+                              setFighterForm({...fighterForm, photo_url: ''})
+                            }}
+                            className="absolute -top-2 -right-2 bg-red-600 text-white p-1 rounded-full hover:bg-red-700"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -591,22 +852,131 @@ export default function AdminPage() {
                       />
                     </div>
                   </div>
-                  <button 
-                    type="submit"
-                    className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition"
-                  >
-                    Crear Peleador
-                  </button>
+
+                  {/* Toggle activo */}
+                  <div className="flex items-center space-x-3 bg-gray-50 p-4 rounded-lg">
+                    <input
+                      type="checkbox"
+                      id="is_active"
+                      checked={fighterForm.is_active}
+                      onChange={(e) => setFighterForm({...fighterForm, is_active: e.target.checked})}
+                      className="w-5 h-5 text-red-600 rounded focus:ring-red-500"
+                    />
+                    <label htmlFor="is_active" className="text-sm font-medium text-gray-700">
+                      Peleador activo (visible en el sitio público)
+                    </label>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button 
+                      type="submit"
+                      disabled={uploadingFighterImage}
+                      className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {uploadingFighterImage ? 'Subiendo imagen...' : (fighterForm.id ? 'Actualizar Peleador' : 'Crear Peleador')}
+                    </button>
+                    
+                    {fighterForm.id && (
+                      <button 
+                        type="button"
+                        onClick={cancelFighterEdit}
+                        className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-2 rounded-lg transition"
+                      >
+                        Cancelar
+                      </button>
+                    )}
+                  </div>
                 </form>
+
+                {/* Lista de peleadores */}
+                <div className="mt-12">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">
+                    Peleadores Existentes ({allFighters.length})
+                  </h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {allFighters.map(fighter => (
+                      <div 
+                        key={fighter.id}
+                        className={`bg-white border rounded-lg p-4 hover:shadow-md transition ${
+                          !fighter.is_active ? 'border-gray-300 opacity-60' : 'border-gray-200'
+                        }`}
+                      >
+                        <div className="flex items-start space-x-4">
+                          {fighter.photo_url ? (
+                            <img 
+                              src={fighter.photo_url} 
+                              alt={fighter.name}
+                              className="w-16 h-16 rounded-lg object-cover"
+                            />
+                          ) : (
+                            <div className="w-16 h-16 rounded-lg bg-gray-200 flex items-center justify-center">
+                              <Users className="w-8 h-8 text-gray-400" />
+                            </div>
+                          )}
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-bold text-gray-900 truncate">{fighter.name}</h4>
+                              {!fighter.is_active && (
+                                <span className="px-2 py-1 rounded text-xs font-semibold bg-gray-100 text-gray-600">
+                                  Inactivo
+                                </span>
+                              )}
+                            </div>
+                            {fighter.nickname && (
+                              <p className="text-sm text-gray-600 truncate">"{fighter.nickname}"</p>
+                            )}
+                            {fighter.division && (
+                              <p className="text-xs text-gray-500 truncate">{fighter.division}</p>
+                            )}
+                            {fighter.gym && (
+                              <p className="text-xs text-gray-500 truncate">{fighter.gym}</p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 mt-4">
+                          <button
+                            onClick={() => handleEditFighter(fighter)}
+                            className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded transition text-sm"
+                          >
+                            <Edit className="w-4 h-4" />
+                            Editar
+                          </button>
+                          <button
+                            onClick={() => handleToggleFighterActive(fighter)}
+                            className={`flex-1 px-3 py-2 rounded text-sm font-semibold transition ${
+                              fighter.is_active
+                                ? 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                                : 'bg-green-600 hover:bg-green-700 text-white'
+                            }`}
+                          >
+                            {fighter.is_active ? 'Desactivar' : 'Activar'}
+                          </button>
+                          <button
+  onClick={() => handleDeleteFighter(fighter.id, fighter.photo_url)}
+  className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded transition"
+  title="Eliminar"
+>
+  <Trash2 className="w-4 h-4" />
+</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
             {/* EVENTS TAB */}
             {activeTab === 'events' && (
               <div>
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Crear Nuevo Evento</h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-6">
+                  {eventForm.id ? 'Editar Evento' : 'Crear Nuevo Evento'}
+                </h2>
 
-                <form onSubmit={handleCreateEvent} className="space-y-4">
+                <form onSubmit={handleCreateOrUpdateEvent} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -657,17 +1027,76 @@ export default function AdminPage() {
                       />
                     </div>
                   </div>
-                  <button 
-                    type="submit"
-                    className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition"
-                  >
-                    Crear Evento
-                  </button>
+                  
+                  <div className="flex gap-3">
+                    <button 
+                      type="submit"
+                      className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition"
+                    >
+                      {eventForm.id ? 'Actualizar Evento' : 'Crear Evento'}
+                    </button>
+                    
+                    {eventForm.id && (
+                      <button 
+                        type="button"
+                        onClick={cancelEventEdit}
+                        className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-2 rounded-lg transition"
+                      >
+                        Cancelar
+                      </button>
+                    )}
+                  </div>
                 </form>
+
+                {/* Lista de eventos */}
+                <div className="mt-12">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">
+                    Eventos Existentes ({events.length})
+                  </h3>
+
+                  <div className="space-y-4">
+                    {events.map(event => (
+                      <div 
+                        key={event.id}
+                        className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-bold text-gray-900 mb-1">{event.name}</h4>
+                            <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
+                              {event.org && <p><span className="font-medium">Org:</span> {event.org}</p>}
+                              {event.event_date && (
+                                <p><span className="font-medium">Fecha:</span> {new Date(event.event_date).toLocaleDateString('es-MX')}</p>
+                              )}
+                              {event.location && <p className="col-span-2"><span className="font-medium">Ubicación:</span> {event.location}</p>}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 ml-4">
+                            <button
+                              onClick={() => handleEditEvent(event)}
+                              className="p-2 hover:bg-blue-100 rounded transition"
+                              title="Editar"
+                            >
+                              <Edit className="w-4 h-4 text-blue-600" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteEvent(event.id)}
+                              className="p-2 hover:bg-red-100 rounded transition"
+                              title="Eliminar"
+                            >
+                              <Trash2 className="w-4 h-4 text-red-600" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
-            {/* FIGHTS TAB */}
+            {/* FIGHTS TAB - Sin cambios */}
             {activeTab === 'fights' && (
               <div>
                 <h2 className="text-xl font-bold text-gray-900 mb-6">Registrar Nuevo Combate</h2>
@@ -790,7 +1219,7 @@ export default function AdminPage() {
               </div>
             )}
 
-            {/* ANNOUNCEMENTS TAB - NUEVO */}
+            {/* ANNOUNCEMENTS TAB - Sin cambios */}
             {activeTab === 'announcements' && (
               <div>
                 <h2 className="text-xl font-bold text-gray-900 mb-6">
@@ -798,7 +1227,6 @@ export default function AdminPage() {
                 </h2>
 
                 <form onSubmit={handleCreateOrUpdateAnnouncement} className="space-y-6">
-                  {/* Título */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Título del Anuncio *
@@ -813,7 +1241,6 @@ export default function AdminPage() {
                     />
                   </div>
 
-                  {/* Imagen destacada */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Imagen Destacada
@@ -829,7 +1256,6 @@ export default function AdminPage() {
                         JPG, PNG o WebP. Máximo 5MB. Recomendado: 1200x630px
                       </p>
                       
-                      {/* Preview de imagen */}
                       {imagePreview && (
                         <div className="relative">
                           <img 
@@ -853,7 +1279,6 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  {/* Editor de contenido */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Contenido *
@@ -861,11 +1286,10 @@ export default function AdminPage() {
                     <RichTextEditor
                       content={announcementForm.content}
                       onChange={(html) => setAnnouncementForm({...announcementForm, content: html})}
-                      placeholder="Escribe el contenido del anuncio aquí. Puedes usar negritas, listas, títulos..."
+                      placeholder="Escribe el contenido del anuncio aquí..."
                     />
                   </div>
 
-                  {/* Excerpt opcional */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Extracto (Opcional)
@@ -873,7 +1297,7 @@ export default function AdminPage() {
                     <textarea
                       value={announcementForm.excerpt}
                       onChange={(e) => setAnnouncementForm({...announcementForm, excerpt: e.target.value})}
-                      placeholder="Breve resumen para mostrar en las cards (se genera automáticamente si lo dejas vacío)"
+                      placeholder="Breve resumen (se genera automáticamente si lo dejas vacío)"
                       rows={3}
                       maxLength={200}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
@@ -883,7 +1307,6 @@ export default function AdminPage() {
                     </p>
                   </div>
 
-                  {/* Toggle publicar */}
                   <div className="flex items-center space-x-3 bg-gray-50 p-4 rounded-lg">
                     <input
                       type="checkbox"
@@ -893,18 +1316,17 @@ export default function AdminPage() {
                       className="w-5 h-5 text-red-600 rounded focus:ring-red-500"
                     />
                     <label htmlFor="published" className="text-sm font-medium text-gray-700">
-                      Publicar inmediatamente (visible en el sitio público)
+                      Publicar inmediatamente
                     </label>
                   </div>
 
-                  {/* Botones de acción */}
                   <div className="flex gap-3">
                     <button 
                       type="submit"
                       disabled={uploadingImage}
-                      className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition disabled:opacity-50"
                     >
-                      {uploadingImage ? 'Subiendo imagen...' : (announcementForm.id ? 'Actualizar Anuncio' : 'Crear Anuncio')}
+                      {uploadingImage ? 'Subiendo...' : (announcementForm.id ? 'Actualizar' : 'Crear Anuncio')}
                     </button>
                     
                     {announcementForm.id && (
@@ -919,7 +1341,6 @@ export default function AdminPage() {
                   </div>
                 </form>
 
-                {/* Lista de anuncios existentes */}
                 <div className="mt-12">
                   <h3 className="text-lg font-bold text-gray-900 mb-4">
                     Anuncios Existentes ({announcements.length})
@@ -947,7 +1368,7 @@ export default function AdminPage() {
                               {announcement.excerpt || 'Sin extracto'}
                             </p>
                             <p className="text-xs text-gray-400">
-                              Creado: {new Date(announcement.created_at).toLocaleDateString('es-MX')}
+                              {new Date(announcement.created_at).toLocaleDateString('es-MX')}
                             </p>
                           </div>
 
@@ -955,14 +1376,12 @@ export default function AdminPage() {
                             <button
                               onClick={() => setPreviewAnnouncement(announcement)}
                               className="p-2 hover:bg-gray-100 rounded transition"
-                              title="Vista previa"
                             >
                               <Eye className="w-4 h-4 text-gray-600" />
                             </button>
                             <button
                               onClick={() => handleEditAnnouncement(announcement)}
                               className="p-2 hover:bg-blue-100 rounded transition"
-                              title="Editar"
                             >
                               <Edit className="w-4 h-4 text-blue-600" />
                             </button>
@@ -979,7 +1398,6 @@ export default function AdminPage() {
                             <button
                               onClick={() => handleDeleteAnnouncement(announcement.id)}
                               className="p-2 hover:bg-red-100 rounded transition"
-                              title="Eliminar"
                             >
                               <Trash2 className="w-4 h-4 text-red-600" />
                             </button>
