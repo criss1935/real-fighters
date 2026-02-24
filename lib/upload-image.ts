@@ -1,119 +1,75 @@
 import { supabase } from './supabase';
 
-/**
- * Sube una imagen a Supabase Storage
- * @param file - Archivo de imagen a subir
- * @param bucket - Nombre del bucket ('announcement-images', 'fighters-photos', etc.)
- * @returns URL pública de la imagen o null si falla
- */
+export type BucketName = 
+  | 'announcement-images' 
+  | 'fighters-photos' 
+  | 'events-photos'
+  | 'students-photos'
+  | 'filiales-images'
+  | 'classes-images';
+
+export function validateImageFile(file: File): { valid: boolean; error?: string } {
+  const maxSize = 5 * 1024 * 1024; // 5MB
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+
+  if (!allowedTypes.includes(file.type)) {
+    return { valid: false, error: 'Solo se permiten imágenes JPG, PNG o WebP' };
+  }
+
+  if (file.size > maxSize) {
+    return { valid: false, error: 'La imagen no debe superar 5MB' };
+  }
+
+  return { valid: true };
+}
+
 export async function uploadImage(
   file: File,
-  bucket: 'announcement-images' | 'fighters-photos' | 'events-photos' = 'announcement-images'
+  bucket: BucketName = 'announcement-images'
 ): Promise<string | null> {
   try {
-    // Validar que sea una imagen
-    if (!file.type.startsWith('image/')) {
-      throw new Error('El archivo debe ser una imagen');
-    }
-
-    // Validar tamaño (max 5MB)
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    if (file.size > maxSize) {
-      throw new Error('La imagen no debe superar 5MB');
-    }
-
-    // Generar nombre único para evitar colisiones
     const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const fileName = `${Math.random()}.${fileExt}`;
     const filePath = `${fileName}`;
 
-    // Subir a Supabase Storage
-    const { data, error } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from(bucket)
       .upload(filePath, file, {
         cacheControl: '3600',
         upsert: false
       });
 
-    if (error) {
-      console.error('Error uploading to Supabase Storage:', error);
-      throw error;
+    if (uploadError) {
+      throw uploadError;
     }
 
-    // Obtener URL pública
-    const { data: urlData } = supabase.storage
+    const { data } = supabase.storage
       .from(bucket)
       .getPublicUrl(filePath);
 
-    console.log('✅ Imagen subida exitosamente:', urlData.publicUrl);
-    return urlData.publicUrl;
-
-  } catch (error: any) {
-    console.error('Error en uploadImage:', error);
-    alert(`Error al subir imagen: ${error.message}`);
+    return data.publicUrl;
+  } catch (error) {
+    console.error('Error uploading image:', error);
     return null;
   }
 }
 
-/**
- * Elimina una imagen de Supabase Storage
- * @param imageUrl - URL completa de la imagen
- * @param bucket - Nombre del bucket
- * @returns true si se eliminó exitosamente
- */
 export async function deleteImage(
-  imageUrl: string,
-  bucket: 'announcement-images' | 'fighters-photos' | 'events-photos' = 'announcement-images'
+  url: string,
+  bucket: BucketName
 ): Promise<boolean> {
   try {
-    // Extraer el path del archivo de la URL
-    const urlParts = imageUrl.split(`/${bucket}/`);
-    if (urlParts.length < 2) {
-      throw new Error('URL de imagen inválida');
-    }
-    const filePath = urlParts[1];
+    const fileName = url.split('/').pop();
+    if (!fileName) return false;
 
-    // Eliminar de Supabase Storage
     const { error } = await supabase.storage
       .from(bucket)
-      .remove([filePath]);
+      .remove([fileName]);
 
-    if (error) {
-      console.error('Error deleting from Supabase Storage:', error);
-      throw error;
-    }
-
-    console.log('✅ Imagen eliminada exitosamente');
+    if (error) throw error;
     return true;
-
-  } catch (error: any) {
-    console.error('Error en deleteImage:', error);
+  } catch (error) {
+    console.error('Error deleting image:', error);
     return false;
   }
-}
-
-/**
- * Valida si un archivo es una imagen válida
- * @param file - Archivo a validar
- * @returns true si es válido, mensaje de error si no
- */
-export function validateImageFile(file: File): { valid: boolean; error?: string } {
-  // Validar tipo
-  if (!file.type.startsWith('image/')) {
-    return { valid: false, error: 'El archivo debe ser una imagen (JPG, PNG, WebP)' };
-  }
-
-  // Validar tamaño (max 5MB)
-  const maxSize = 5 * 1024 * 1024;
-  if (file.size > maxSize) {
-    return { valid: false, error: 'La imagen no debe superar 5MB' };
-  }
-
-  // Validar extensiones permitidas
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
-  if (!allowedTypes.includes(file.type)) {
-    return { valid: false, error: 'Formato no permitido. Use JPG, PNG o WebP' };
-  }
-
-  return { valid: true };
 }
