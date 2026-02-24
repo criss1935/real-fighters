@@ -32,7 +32,7 @@ export const classes: ClassInfo[] = [
       monthly: '$800',
       inscription: '$1,000 (Nuevos) / $500 (Socios activos)'
     },
-    icon: '🥋',
+    icon: '',
     color: 'bg-blue-600',
     imageUrl: 'https://t4.ftcdn.net/jpg/03/30/83/73/360_F_330837380_teXdp7be7qbhLYqrQbxXlA4QYkvqKAE4.jpg'
   },
@@ -50,7 +50,7 @@ export const classes: ClassInfo[] = [
       monthly: '$800',
       inscription: '$1,000 (Nuevos) / $500 (Socios activos)'
     },
-    icon: '🥊',
+    icon: '',
     color: 'bg-red-600',
     imageUrl: 'https://media.istockphoto.com/id/896799182/photo/little-boy-training-boxing-with-punching-bag.jpg?s=612x612&w=0&k=20&c=WwXJwtZ1gPlF-0D5mOCxS7uhvD1Yitdibyvy0RK1qTM='
   },
@@ -68,7 +68,7 @@ export const classes: ClassInfo[] = [
       monthly: '$800',
       inscription: '$1,000 (Nuevos) / $500 (Socios activos)'
     },
-    icon: '🥋',
+    icon: '',
     color: 'bg-purple-600',
     imageUrl: 'https://img.freepik.com/free-photo/male-fighter-action-leg-kicking_613910-11746.jpg?semt=ais_hybrid&w=740&q=80'
   },
@@ -86,7 +86,7 @@ export const classes: ClassInfo[] = [
       monthly: '$800',
       inscription: '$1,000 (Nuevos) / $500 (Socios activos)'
     },
-    icon: '🥋',
+    icon: '',
     color: 'bg-indigo-600',
     imageUrl: 'https://images8.alphacoders.com/746/thumb-1920-746423.jpg'
   },
@@ -104,7 +104,7 @@ export const classes: ClassInfo[] = [
       monthly: '$800',
       inscription: '$1,000 (Nuevos) / $500 (Socios activos)'
     },
-    icon: '🥋',
+    icon: '',
     color: 'bg-red-700',
     imageUrl: 'https://media.cnn.com/api/v1/images/stellar/prod/gettyimages-1448248356.jpg?c=original&q=h_447,c_fill'
   },
@@ -122,7 +122,7 @@ export const classes: ClassInfo[] = [
       monthly: '$800',
       inscription: '$1,000 (Nuevos) / $500 (Socios activos)'
     },
-    icon: '🦵',
+    icon: '',
     color: 'bg-yellow-600',
     imageUrl: 'https://images.unsplash.com/photo-1729673517080-44353fa68fe0?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8bXVheSUyMHRoYWl8ZW58MHx8MHx8fDA%3D  '
   },
@@ -140,7 +140,7 @@ export const classes: ClassInfo[] = [
       monthly: '$800',
       inscription: '$1,000 (Nuevos) / $500 (Socios activos)'
     },
-    icon: '🤼',
+    icon: '',
     color: 'bg-blue-700',
     imageUrl: 'https://media.istockphoto.com/id/1134128200/photo/brazilain-jiu-jitsu-bjj-fighters-in-training-sparing-open-x-guard.jpg?b=1&s=612x612&w=0&k=20&c=PEN8pGo2W2a5CsmXRTuBgoLN00J9oV98fJkqtcKZvno='
   },
@@ -158,7 +158,7 @@ export const classes: ClassInfo[] = [
       monthly: '$800',
       inscription: '$1,000 (Nuevos) / $500 (Socios activos)'
     },
-    icon: '🥊',
+    icon: '',
     color: 'bg-green-600',
     imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQOxsncZkqAz1M1KW_Kk9CoLjoer3Po2ah6Mw&s'
   },
@@ -176,7 +176,7 @@ export const classes: ClassInfo[] = [
       monthly: '$800',
       inscription: '$1,000 (Nuevos) / $500 (Socios activos)'
     },
-    icon: '💪',
+    icon: '',
     color: 'bg-orange-600',
     imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTvLz6zpVSIJCa0nNsWpciGKDA63m7mJDyjvA&s'
   }

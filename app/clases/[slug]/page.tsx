@@ -116,10 +116,9 @@ export default function ClaseDetailPage({ params }: { params: { slug: string } }
               rel="noopener noreferrer"
               className="inline-block bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition shadow-lg hover:shadow-xl"
             >
-              Agendar Clase de Prueba GRATIS
+              Agendar Clase 
             </a>
             <p className="text-gray-600 mt-4 text-sm">
-              ¡Tu primera clase es totalmente gratis!
             </p>
           </div>
         </div>
