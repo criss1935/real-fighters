@@ -16,6 +16,10 @@ export default function Header() {
     { href: '/fighters', label: 'Peleadores' },
     { href: '/students', label: 'Alumnos' },
     { href: '/events', label: 'Eventos' },
+    { href: '/announcements', label: 'Noticias' },
+    { href: '/tienda', label: 'Tienda' },
+    { href: '/staff', label: 'Staff' },
+    { href: '/filiales', label: 'Filiales' },
     { href: '/admin', label: 'Admin' },
   ]
   
@@ -46,12 +50,12 @@ export default function Header() {
           </Link>
           
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex space-x-8">
+          <nav className="hidden lg:flex space-x-6">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`hover:text-red-500 transition ${
+                className={`hover:text-red-500 transition text-sm font-medium ${
                   isActive(link.href) ? 'text-red-500 font-semibold' : ''
                 }`}
               >
@@ -63,7 +67,7 @@ export default function Header() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden text-white p-2"
+            className="lg:hidden text-white p-2"
             aria-label="Toggle menu"
           >
             {mobileMenuOpen ? (
@@ -76,7 +80,7 @@ export default function Header() {
         
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-gray-800">
+          <div className="lg:hidden py-4 border-t border-gray-800">
             <nav className="flex flex-col space-y-4">
               {navLinks.map((link) => (
                 <Link
