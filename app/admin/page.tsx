@@ -1562,7 +1562,7 @@ function AdminFightsTab({ fightForm, setFightForm, handleCreateFight, events, fi
       <form onSubmit={handleCreateFight} className="space-y-4">
         <select required value={fightForm.event_id} onChange={(e) => setFightForm({...fightForm, event_id: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
           <option value="">Seleccionar evento...</option>
-          {events.map(event => (
+          {events.map((event: any) => (
             <option key={event.id} value={event.id}>{event.name} - {event.event_date}</option>
           ))}
         </select>
