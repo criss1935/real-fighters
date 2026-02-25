@@ -1638,7 +1638,7 @@ function AdminAnnouncementsTab({ announcementForm, setAnnouncementForm, imageFil
 
       <h3 className="text-lg font-bold text-gray-900 mb-4">Anuncios ({announcements.length})</h3>
       <div className="space-y-4">
-        {announcements.map((announcement: any ) X=> (
+        {announcements.map((announcement: any ) => (
           <div key={announcement.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
             <div className="flex items-start justify-between">
               <div className="flex-1">
