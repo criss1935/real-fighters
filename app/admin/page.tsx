@@ -1202,7 +1202,7 @@ function AdminStudentsTab({ studentForm, setStudentForm, studentImageFile, stude
 
       <h3 className="text-lg font-bold text-gray-900 mb-4">Alumnos ({students.length})</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {students.map(student => (
+        {students.map((student: any)=> (
           <div key={student.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
             <div className="flex items-start space-x-4 mb-4">
               {student.photo_url ? (
@@ -1271,7 +1271,7 @@ function AdminFightersTab({ fighterForm, setFighterForm, fighterImageFile, fight
 
       <h3 className="text-lg font-bold text-gray-900 mb-4">Peleadores ({allFighters.length})</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {allFighters.map(fighter => (
+        {allFighters.map((fighter: any)=> (
           <div key={fighter.id} className={`bg-white border rounded-lg p-4 hover:shadow-md transition ${!fighter.is_active ? 'border-gray-300 opacity-60' : 'border-gray-200'}`}>
             <div className="flex items-start space-x-4 mb-4">
               {fighter.photo_url ? (
@@ -1341,7 +1341,7 @@ function AdminFilialesTab({ filialForm, setFilialForm, filialImageFile, filialIm
 
       <h3 className="text-lg font-bold text-gray-900 mb-4">Filiales ({filialesData.length})</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filialesData.map(filial => (
+        {filialesData.map((filial: any) => (
           <div key={filial.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
             <div className="flex items-start space-x-4 mb-4">
               {filial.image_url ? (
@@ -1414,7 +1414,7 @@ function AdminClassesTab({ classForm, setClassForm, classImageFile, classImagePr
 
       <h3 className="text-lg font-bold text-gray-900 mb-4">Clases ({classesData.length})</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {classesData.map(clase => (
+        {classesData.map((clase: any) => (
           <div key={clase.slug} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
             <div className="flex items-start space-x-4 mb-4">
               {clase.imageUrl ? (
@@ -1478,7 +1478,7 @@ function AdminPlansTab({ planForm, setPlanForm, handleCreateOrUpdatePlan, plansD
 
       <h3 className="text-lg font-bold text-gray-900 mb-4">Planes ({plansData.length})</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {plansData.map(plan => (
+        {plansData.map((plan: any) => (
           <div key={plan.id} className={`border rounded-lg p-4 hover:shadow-md transition ${plan.highlighted ? 'bg-yellow-50 border-yellow-200' : 'bg-white border-gray-200'}`}>
             <h4 className="font-bold text-gray-900 mb-1">{plan.name}</h4>
             <p className="text-sm text-gray-600 mb-2">{plan.subtitle}</p>
@@ -1522,7 +1522,7 @@ function AdminEventsTab({ eventForm, setEventForm, handleCreateOrUpdateEvent, ev
 
       <h3 className="text-lg font-bold text-gray-900 mb-4">Eventos ({events.length})</h3>
       <div className="space-y-4">
-        {events.map(event => (
+        {events.map((event: any) => (
           <div key={event.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
             <div className="flex items-start justify-between">
               <div>
@@ -1570,13 +1570,13 @@ function AdminFightsTab({ fightForm, setFightForm, handleCreateFight, events, fi
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <select required value={fightForm.red_fighter_id} onChange={(e) => setFightForm({...fightForm, red_fighter_id: e.target.value})} className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
             <option value="">Peleador Esquina Roja...</option>
-            {fighters.map(fighter => (
+            {fighters.map((fighter: any) => (
               <option key={fighter.id} value={fighter.id}>{fighter.name}</option>
             ))}
           </select>
           <select required value={fightForm.blue_fighter_id} onChange={(e) => setFightForm({...fightForm, blue_fighter_id: e.target.value})} className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
             <option value="">Peleador Esquina Azul...</option>
-            {fighters.map(fighter => (
+            {fighters.map((fighter: any) => (
               <option key={fighter.id} value={fighter.id}>{fighter.name}</option>
             ))}
           </select>
@@ -1638,7 +1638,7 @@ function AdminAnnouncementsTab({ announcementForm, setAnnouncementForm, imageFil
 
       <h3 className="text-lg font-bold text-gray-900 mb-4">Anuncios ({announcements.length})</h3>
       <div className="space-y-4">
-        {announcements.map(announcement => (
+        {announcements.map((announcement: any ) X=> (
           <div key={announcement.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
             <div className="flex items-start justify-between">
               <div className="flex-1">
