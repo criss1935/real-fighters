@@ -111,7 +111,7 @@ export default function ClaseDetailPage({ params }: { params: { slug: string } }
           {/* CTA */}
           <div className="mt-12 text-center">
             <a 
-              href="https://wa.me/5255351476588"
+              href="https://wa.me/5535147658"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition shadow-lg hover:shadow-xl"

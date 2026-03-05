@@ -1,312 +1,323 @@
-import Link from 'next/link';
+'use client'
 
-const filiales = [
-  {
-    id: 1,
-    name: "Real Fighters Coyoacán",
-    slug: "coyoacan",
-    status: "Activa",
-    address: "Calz. del Hueso 590, Coapa, Los Girasoles, Coyoacán, 04920 CDMX",
-    phone: "55 8841 9852",
-    email: "coyoacan@realfighters.mx",
-    whatsapp: "525588419852",
-    mapLink: "https://maps.google.com/?q=Calz.+del+Hueso+590,+Coapa,+Los+Girasoles,+Coyoacán,+04920+Ciudad+de+México",
-    horarios: {
-      "Lunes a Viernes": "7:00 AM - 10:00 PM",
-      "Sábados": "9:00 AM - 2:00 PM",
-      "Domingos": "Cerrado"
-    },
-    servicios: ["MMA", "Muay Thai", "BJJ", "Boxeo", "CrossFit", "Kids"],
-    precios: {
-      basico: "$800",
-      rfm: "$1,500",
-      daypass: "$150"
-    },
-    descripcion: "Nuestra sede principal en Coyoacán cuenta con instalaciones de primer nivel, tatami profesional, área de pesas y vestuarios completos.",
-    disponible: true
-  },
-  {
-    id: 2,
-    name: "STRIKERS San Buenaventura",
-    slug: "strikers-sanbuena",
-    status: "Próximamente",
-    address: "Entre calle Chopos y Paseo de las Aves, San Buenaventura, Ixtapaluca, Estado de México",
-    phone: "Próximamente",
-    email: "strikers@realfighters.mx",
-    whatsapp: "525588419852",
-    mapLink: "#",
-    horarios: {
-      "Lunes a Sábado": "Información próximamente"
-    },
-    servicios: ["Kickboxing", "K-1", "Striking", "Boxeo"],
-    precios: {
-      individual: "$25",
-      mensual: "$450"
-    },
-    descripcion: "Academia enfocada en la formación integral de competidores, trabajando bajo una metodología profesional y disciplinada.",
-    disponible: false
-  },
-  {
-    id: 3,
-    name: "STRIKERS Cuatro Vientos",
-    slug: "strikers-cuatrovientos",
-    status: "Próximamente",
-    address: "Calle Granizo, a un costado de la Alberca Olímpica, Cuatro Vientos, Ixtapaluca, Estado de México",
-    phone: "Próximamente",
-    email: "strikers@realfighters.mx",
-    whatsapp: "525588419852",
-    mapLink: "#",
-    horarios: {
-      "Lunes a Sábado": "Información próximamente"
-    },
-    servicios: ["Kickboxing", "K-1", "Striking", "Boxeo"],
-    precios: {
-      individual: "$25",
-      mensual: "$450"
-    },
-    descripcion: "Academia enfocada en la formación integral de competidores, trabajando bajo una metodología profesional y disciplinada.",
-    disponible: false
-  },
-  {
-    id: 4,
-    name: "Strikers Jiutepec",
-    slug: "strikers-jiutepec",
-    status: "Próximamente",
-    address: "Tabachin 11, El Edén, Jiutepec, Morelos",
-    phone: "777 363 8266",
-    email: "jiutepec@realfighters.mx",
-    whatsapp: "527773638266",
-    mapLink: "#",
-    horarios: {
-      "Lunes a Sábado": "Información próximamente"
-    },
-    servicios: ["MMA", "Kickboxing", "Muay Thai"],
-    precios: {
-      mensual: "Próximamente"
-    },
-    descripcion: "Próximamente más información sobre esta filial.",
-    disponible: false
-  },
-  {
-    id: 5,
-    name: "Scouting MMA Jiutepec",
-    slug: "scouting-jiutepec",
-    status: "Próximamente",
-    address: "Francisco I Madero (altos subodega), Jiutepec, Morelos",
-    phone: "785 108 5382",
-    email: "scouting@realfighters.mx",
-    whatsapp: "527851085382",
-    mapLink: "#",
-    horarios: {
-      "Lunes a Sábado": "Información próximamente"
-    },
-    servicios: ["MMA", "Grappling"],
-    precios: {
-      mensual: "Próximamente"
-    },
-    descripcion: "Próximamente más información sobre esta filial.",
-    disponible: false
-  },
-  {
-    id: 6,
-    name: "Real Fighters Papantla",
-    slug: "papantla",
-    status: "Próximamente",
-    address: "Papantla, Veracruz",
-    phone: "Próximamente",
-    email: "papantla@realfighters.mx",
-    whatsapp: "525588419852",
-    mapLink: "#",
-    horarios: {
-      "Lunes a Sábado": "Información próximamente"
-    },
-    servicios: ["MMA", "Muay Thai", "BJJ"],
-    precios: {
-      mensual: "Próximamente"
-    },
-    descripcion: "Próximamente más información sobre esta filial.",
-    disponible: false
-  }
-];
+import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
+import Image from 'next/image'
+import { X, MapPin, Phone, Mail, Clock } from 'lucide-react'
+
+type Filial = {
+  id: number
+  name: string
+  slug: string
+  status: string
+  address: string
+  phone: string
+  email: string
+  whatsapp: string
+  mapLink: string
+  horarios: Record<string, string>
+  servicios: string[]
+  precios: Record<string, string>
+  descripcion: string
+  disponible: boolean
+  image_url: string
+}
 
 export default function FilialesPage() {
+  const [filiales, setFiliales] = useState<Filial[]>([])
+  const [selectedFilial, setSelectedFilial] = useState<Filial | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadFiliales()
+  }, [])
+
+  async function loadFiliales() {
+    const { data } = await supabase
+      .from('config')
+      .select('data')
+      .eq('key', 'filiales')
+      .single()
+
+    if (data?.data) {
+      setFiliales(data.data)
+    }
+    setLoading(false)
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-600">Cargando filiales...</div>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-r from-gray-900 to-gray-800 text-white py-20">
-        <div className="container mx-auto px-4">
-          <h1 className="text-5xl font-bold mb-4 text-center">Nuestras Filiales</h1>
-          <p className="text-xl text-gray-300 text-center max-w-2xl mx-auto">
+    <div className="min-h-screen bg-gray-50 py-12">
+      <div className="container mx-auto px-4">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-5xl font-bold text-gray-900 mb-4">Nuestras Filiales</h1>
+          <p className="text-xl text-gray-600">
             Encuentra la ubicación más cercana a ti
           </p>
         </div>
-      </section>
 
-      {/* Filiales Grid */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {filiales.map((filial) => (
-              <div 
-                key={filial.id}
-                className={`bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition ${
-                  !filial.disponible ? 'opacity-75' : ''
-                }`}
-              >
-                {/* Placeholder de imagen */}
-                <div className="h-64 bg-gradient-to-br from-red-600 to-red-700 relative overflow-hidden flex items-center justify-center">
-                  <span className="text-6xl font-bold text-white opacity-50">
-                    {filial.name.split(' ')[0].substring(0, 2).toUpperCase()}
-                  </span>
-                  <div className="absolute top-4 right-4">
-                    {filial.disponible ? (
-                      <span className="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                        ✓ Activa
-                      </span>
-                    ) : (
-                      <span className="bg-yellow-500 text-gray-900 text-xs font-bold px-3 py-1 rounded-full">
-                        🚧 Próximamente
-                      </span>
-                    )}
+        {/* Grid de filiales - Solo foto, nombre, dirección y WhatsApp */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {filiales.map((filial) => (
+            <div
+              key={filial.id}
+              onClick={() => setSelectedFilial(filial)}
+              className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition transform hover:scale-105 cursor-pointer"
+            >
+              {/* Foto */}
+              <div className="relative h-64 bg-gray-200">
+                {filial.image_url ? (
+                  <Image
+                    src={filial.image_url}
+                    alt={filial.name}
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-red-600 to-red-800">
+                    <span className="text-6xl text-white opacity-50">🏢</span>
                   </div>
+                )}
+                {!filial.disponible && (
+                  <div className="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center">
+                    <span className="bg-yellow-500 text-gray-900 px-6 py-3 rounded-lg font-bold text-lg">
+                      Próximamente
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Info básica */}
+              <div className="p-6">
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                  {filial.name}
+                </h3>
+
+                <div className="space-y-3 text-sm">
+                  {/* Dirección */}
+                  {filial.address && (
+                    <div className="flex items-start">
+                      <MapPin className="w-5 h-5 text-red-600 mr-2 flex-shrink-0 mt-0.5" />
+                      <span className="text-gray-700">{filial.address}</span>
+                    </div>
+                  )}
+
+                  {/* WhatsApp */}
+                  {filial.whatsapp && (
+                    <div className="flex items-center">
+                      <Phone className="w-5 h-5 text-green-600 mr-2 flex-shrink-0" />
+                      <a
+                        href={`https://wa.me/${filial.whatsapp.replace(/\D/g, '')}?text=Hola,%20quiero%20información%20sobre%20${filial.name}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-green-600 hover:text-green-700 font-semibold"
+                      >
+                        {filial.whatsapp}
+                      </a>
+                    </div>
+                  )}
                 </div>
 
-                {/* Contenido */}
-                <div className="p-6">
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                    {filial.name}
-                  </h2>
-                  <p className="text-gray-600 mb-6">
-                    {filial.descripcion}
-                  </p>
+                <button
+                  onClick={() => setSelectedFilial(filial)}
+                  className="mt-6 w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold transition"
+                >
+                  Ver Detalles →
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
 
-                  {/* Dirección */}
-                  <div className="mb-6">
-                    <h3 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
-                      📍 Dirección
-                    </h3>
-                    <p className="text-gray-600 mb-3">{filial.address}</p>
-                    {filial.disponible && filial.mapLink !== '#' && (
-                      <a 
-                        href={filial.mapLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded transition"
-                      >
-                        Ver en Google Maps
-                      </a>
-                    )}
+        {/* Modal de detalles */}
+        {selectedFilial && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              {/* Header del modal */}
+              <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
+                <h2 className="text-3xl font-bold text-gray-900">
+                  {selectedFilial.name}
+                </h2>
+                <button
+                  onClick={() => setSelectedFilial(null)}
+                  className="text-gray-400 hover:text-gray-600 p-2"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Contenido del modal */}
+              <div className="p-6">
+                {/* Imagen */}
+                {selectedFilial.image_url && (
+                  <div className="relative h-64 rounded-lg overflow-hidden mb-6">
+                    <Image
+                      src={selectedFilial.image_url}
+                      alt={selectedFilial.name}
+                      fill
+                      className="object-cover"
+                    />
                   </div>
+                )}
 
-                  {/* Contacto */}
+                {/* Descripción */}
+                {selectedFilial.descripcion && (
                   <div className="mb-6">
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">
-                      📞 Contacto
-                    </h3>
-                    <div className="space-y-2 text-sm">
-                      <p className="text-gray-600">
-                        Teléfono: {filial.phone !== 'Próximamente' ? (
-                          <a href={`tel:${filial.phone.replace(/\s/g, '')}`} className="text-red-600 hover:underline">
-                            {filial.phone}
+                    <h3 className="text-xl font-bold text-gray-900 mb-3">Descripción</h3>
+                    <p className="text-gray-700">{selectedFilial.descripcion}</p>
+                  </div>
+                )}
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Información de contacto */}
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-4">Contacto</h3>
+                    <div className="space-y-3">
+                      {selectedFilial.address && (
+                        <div className="flex items-start">
+                          <MapPin className="w-5 h-5 text-red-600 mr-3 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-gray-700">{selectedFilial.address}</p>
+                            {selectedFilial.mapLink && (
+                              <a
+                                href={selectedFilial.mapLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-red-600 hover:text-red-700 text-sm font-semibold mt-1 inline-block"
+                              >
+                                Ver en Google Maps →
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedFilial.phone && (
+                        <div className="flex items-center">
+                          <Phone className="w-5 h-5 text-gray-600 mr-3 flex-shrink-0" />
+                          <a
+                            href={`tel:${selectedFilial.phone}`}
+                            className="text-gray-700 hover:text-red-600"
+                          >
+                            {selectedFilial.phone}
                           </a>
-                        ) : (
-                          <span className="text-yellow-600 font-semibold">Próximamente</span>
-                        )}
-                      </p>
-                      <p className="text-gray-600">
-                        Email: <a href={`mailto:${filial.email}`} className="text-red-600 hover:underline">{filial.email}</a>
-                      </p>
-                      {filial.disponible && (
-                        <a 
-                          href={`https://wa.me/${filial.whatsapp}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-block bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2 rounded transition mt-2"
-                        >
-                          💬 WhatsApp
-                        </a>
+                        </div>
+                      )}
+
+                      {selectedFilial.whatsapp && (
+                        <div className="flex items-center">
+                          <Phone className="w-5 h-5 text-green-600 mr-3 flex-shrink-0" />
+                          <a
+                            href={`https://wa.me/${selectedFilial.whatsapp.replace(/\D/g, '')}?text=Hola,%20quiero%20información`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-green-600 hover:text-green-700 font-semibold"
+                          >
+                            WhatsApp: {selectedFilial.whatsapp}
+                          </a>
+                        </div>
+                      )}
+
+                      {selectedFilial.email && (
+                        <div className="flex items-center">
+                          <Mail className="w-5 h-5 text-gray-600 mr-3 flex-shrink-0" />
+                          <a
+                            href={`mailto:${selectedFilial.email}`}
+                            className="text-gray-700 hover:text-red-600"
+                          >
+                            {selectedFilial.email}
+                          </a>
+                        </div>
                       )}
                     </div>
                   </div>
 
                   {/* Horarios */}
-                  <div className="mb-6">
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">
-                      🕐 Horarios
-                    </h3>
-                    <div className="bg-gray-50 rounded p-4 space-y-1 text-sm">
-                      {Object.entries(filial.horarios).map(([dia, horario]) => (
-                        <div key={dia} className="flex justify-between">
-                          <span className="font-semibold text-gray-700">{dia}:</span>
-                          <span className={`${!filial.disponible ? 'text-yellow-600' : 'text-gray-600'}`}>
-                            {horario}
-                          </span>
-                        </div>
-                      ))}
+                  {selectedFilial.horarios && Object.keys(selectedFilial.horarios).length > 0 && (
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                        <Clock className="w-5 h-5 mr-2" />
+                        Horarios
+                      </h3>
+                      <div className="space-y-2">
+                        {Object.entries(selectedFilial.horarios).map(([dia, horario]) => (
+                          <div key={dia} className="flex justify-between text-sm">
+                            <span className="font-semibold text-gray-700 capitalize">{dia}:</span>
+                            <span className="text-gray-600">{horario}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
+                </div>
 
-                  {/* Servicios */}
-                  <div className="mb-6">
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">
-                      🥊 Disciplinas
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {filial.servicios.map((servicio) => (
-                        <span 
-                          key={servicio}
-                          className="bg-red-100 text-red-600 text-sm font-semibold px-3 py-1 rounded-full"
+                {/* Clases/Servicios */}
+                {selectedFilial.servicios && selectedFilial.servicios.length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="text-xl font-bold text-gray-900 mb-4">Clases Disponibles</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {selectedFilial.servicios.map((servicio, index) => (
+                        <div
+                          key={index}
+                          className="bg-red-50 border border-red-200 rounded-lg px-4 py-2 text-center text-sm font-semibold text-red-700"
                         >
                           {servicio}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Precios */}
-                  <div className="border-t pt-4">
-                    <h3 className="text-lg font-bold text-gray-900 mb-3">
-                      💰 Precios
-                    </h3>
-                    <div className="grid grid-cols-3 gap-2 text-center">
-                      {Object.entries(filial.precios).map(([tipo, precio]) => (
-                        <div key={tipo} className="bg-gray-50 rounded p-3">
-                          <p className="text-xs text-gray-600 mb-1 capitalize">
-                            {tipo === 'basico' ? 'Plan Básico' : 
-                             tipo === 'rfm' ? 'Plan #RFM' :
-                             tipo === 'daypass' ? 'Day Pass' :
-                             tipo === 'individual' ? 'Clase' :
-                             tipo === 'mensual' ? 'Mensual' : tipo}
-                          </p>
-                          <p className={`text-lg font-bold ${
-                            precio === 'Próximamente' ? 'text-yellow-600 text-xs' : 'text-red-600'
-                          }`}>
-                            {precio}
-                          </p>
                         </div>
                       ))}
                     </div>
                   </div>
+                )}
+
+                {/* Precios */}
+                {selectedFilial.precios && Object.keys(selectedFilial.precios).length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="text-xl font-bold text-gray-900 mb-4">Precios</h3>
+                    <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                      {Object.entries(selectedFilial.precios).map(([plan, precio]) => (
+                        <div key={plan} className="flex justify-between items-center">
+                          <span className="text-gray-700 font-semibold capitalize">{plan}:</span>
+                          <span className="text-red-600 font-bold text-lg">{precio}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Botones de acción */}
+                <div className="mt-8 flex flex-col sm:flex-row gap-4">
+                  {selectedFilial.whatsapp && (
+                    <a
+                      href={`https://wa.me/${selectedFilial.whatsapp.replace(/\D/g, '')}?text=Hola,%20quiero%20inscribirme%20en%20${selectedFilial.name}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white text-center px-6 py-3 rounded-lg font-semibold transition"
+                    >
+                      💬 Inscribirme por WhatsApp
+                    </a>
+                  )}
+                  {selectedFilial.mapLink && (
+                    <a
+                      href={selectedFilial.mapLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 bg-red-600 hover:bg-red-700 text-white text-center px-6 py-3 rounded-lg font-semibold transition"
+                    >
+                      📍 Cómo Llegar
+                    </a>
+                  )}
                 </div>
               </div>
-            ))}
+            </div>
           </div>
-
-          {/* CTA */}
-          <div className="text-center mt-12 bg-gradient-to-r from-red-600 to-red-700 rounded-lg p-8 text-white">
-            <h3 className="text-2xl font-bold mb-4">¿Quieres abrir una nueva filial?</h3>
-            <p className="mb-6 text-red-100">
-              Únete a la red Real Fighters y forma parte de la comunidad de artes marciales más grande de México
-            </p>
-            <Link 
-              href="https://wa.me/525588419852?text=Hola,%20me%20interesa%20abrir%20una%20filial%20de%20Real%20Fighters"
-              className="inline-block bg-white hover:bg-gray-100 text-red-600 px-8 py-3 rounded-lg font-semibold transition"
-            >
-              Contáctanos
-            </Link>
-          </div>
-        </div>
-      </section>
+        )}
+      </div>
     </div>
-  );
+  )
 }
