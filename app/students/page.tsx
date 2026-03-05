@@ -1,61 +1,41 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import Image from 'next/image'
-import { useEffect, useState } from 'react'
-import { Search } from 'lucide-react'
-
-type Student = {
-  id: number
-  name: string
-  email: string | null
-  phone: string | null
-  birth_date: string | null
-  weight_kg: number | null
-  height_cm: number | null
-  discipline: string | null
-  belt_level: string | null
-  enrollment_date: string
-  gym: string | null
-  status: string
-  photo_url: string | null
-}
 
 export default function StudentsPage() {
-  const [students, setStudents] = useState<Student[]>([])
-  const [filteredStudents, setFilteredStudents] = useState<Student[]>([])
-  const [loading, setLoading] = useState(true)
-  
-  // Filtros
+  const [students, setStudents] = useState<any[]>([])
+  const [filteredStudents, setFilteredStudents] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedDiscipline, setSelectedDiscipline] = useState<string>('all')
-  const [selectedGym, setSelectedGym] = useState<string>('all')
+  const [selectedDiscipline, setSelectedDiscipline] = useState('all')
+  const [selectedGym, setSelectedGym] = useState('all')
+  const [loading, setLoading] = useState(true)
 
-  // Obtener datos
   useEffect(() => {
-    async function getStudents() {
-      const { data, error } = await supabase
-        .from('students')
-        .select('*')
-        .eq('status', 'active')
-        .order('name')
-      
-      if (error) {
-        console.error('Error fetching students:', error)
-        setLoading(false)
-        return
-      }
-      
-      setStudents(data || [])
-      setFilteredStudents(data || [])
-      setLoading(false)
-    }
-    
-    getStudents()
+    loadStudents()
   }, [])
 
-  // Aplicar filtros
   useEffect(() => {
+    filterStudents()
+  }, [students, searchTerm, selectedDiscipline, selectedGym])
+
+  async function loadStudents() {
+    const { data, error } = await supabase
+      .from('students')
+      .select('*')
+      .eq('status', 'active')
+      .order('belt_level', { ascending: false })
+      .order('name')
+
+    if (data) {
+      setStudents(data)
+      setFilteredStudents(data)
+    }
+    setLoading(false)
+  }
+
+  function filterStudents() {
     let filtered = students
 
     // Filtro por búsqueda (nombre)
@@ -70,31 +50,16 @@ export default function StudentsPage() {
       filtered = filtered.filter(s => s.discipline === selectedDiscipline)
     }
 
-    // Filtro por gimnasio/filial
+    // Filtro por filial/gym
     if (selectedGym !== 'all') {
       filtered = filtered.filter(s => s.gym === selectedGym)
     }
 
     setFilteredStudents(filtered)
-  }, [searchTerm, selectedDiscipline, selectedGym, students])
+  }
 
-  // Obtener valores únicos para los filtros
-const disciplines = Array.from(
-  new Set(
-    students
-      .map(s => s.discipline)
-      .filter((d): d is string => d !== null)
-  )
-)
-
-const gyms = Array.from(
-  new Set(
-    students
-      .map(s => s.gym)
-      .filter((g): g is string => g !== null)
-  )
-)
-
+  const disciplines = Array.from(new Set(students.map(s => s.discipline).filter(Boolean)))
+  const gyms = Array.from(new Set(students.map(s => s.gym).filter(Boolean)))
 
   if (loading) {
     return (
@@ -105,157 +70,187 @@ const gyms = Array.from(
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50 py-12">
+      <div className="container mx-auto px-4">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Alumnos
-          </h1>
-          <p className="text-gray-600">
-            {filteredStudents.length} de {students.length} alumnos activos
+        <div className="text-center mb-12">
+          <h1 className="text-5xl font-bold text-gray-900 mb-4">Nuestros Alumnos</h1>
+          <p className="text-xl text-gray-600">
+            {filteredStudents.length} alumno{filteredStudents.length !== 1 ? 's' : ''} activo{filteredStudents.length !== 1 ? 's' : ''}
           </p>
         </div>
-        
+
+        {/* Foto de equipo */}
+        <div className="mb-8 max-w-5xl mx-auto">
+          <div className="relative h-96 rounded-lg overflow-hidden shadow-xl">
+            <Image
+              src="/team-photo.jpg"
+              alt="Foto de Equipo Real Fighters"
+              fill
+              className="object-cover"
+              onError={(e) => {
+                // Si no existe la imagen, mostrar placeholder
+                e.currentTarget.style.display = 'none'
+                e.currentTarget.parentElement!.innerHTML = '<div class="w-full h-full bg-gradient-to-r from-red-600 to-red-800 flex items-center justify-center"><span class="text-6xl text-white opacity-50">🥋</span></div>'
+              }}
+            />
+          </div>
+          <p className="text-center text-gray-600 mt-4 italic">Real Fighters - Familia Unida 🇲🇽</p>
+        </div>
+
+        {/* Leyenda de búsqueda */}
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-8 max-w-4xl mx-auto">
+          <p className="text-green-900 text-center font-semibold">
+            🔍 Busca alumno activo por: <span className="text-green-700">Disciplina, Filial o Nombre</span>
+          </p>
+        </div>
+
         {/* Filtros */}
-        {students.length > 0 && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Búsqueda */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Buscar
-                </label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    placeholder="Nombre..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Búsqueda por nombre */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Buscar por nombre
+              </label>
+              <input
+                type="text"
+                placeholder="Ej: Juan Pérez"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+            </div>
 
-              {/* Disciplina */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Disciplina
-                </label>
-                <select
-                  value={selectedDiscipline}
-                  onChange={(e) => setSelectedDiscipline(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                >
-                  <option value="all">Todas</option>
-                  {disciplines.map(d => (
-                    <option key={d} value={d!}>{d}</option>
-                  ))}
-                </select>
-              </div>
+            {/* Filtro por disciplina */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Filtrar por disciplina
+              </label>
+              <select
+                value={selectedDiscipline}
+                onChange={(e) => setSelectedDiscipline(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              >
+                <option value="all">Todas las disciplinas</option>
+                {disciplines.map(disc => (
+                  <option key={disc} value={disc}>{disc}</option>
+                ))}
+              </select>
+            </div>
 
-              {/* Filial */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Filial
-                </label>
-                <select
-                  value={selectedGym}
-                  onChange={(e) => setSelectedGym(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                >
-                  <option value="all">Todas</option>
-                  {gyms.map(g => (
-                    <option key={g} value={g}>{g}</option>
-                  ))}
-                </select>
-              </div>
+            {/* Filtro por filial */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Filtrar por filial
+              </label>
+              <select
+                value={selectedGym}
+                onChange={(e) => setSelectedGym(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              >
+                <option value="all">Todas las filiales</option>
+                {gyms.map(gym => (
+                  <option key={gym} value={gym}>{gym}</option>
+                ))}
+              </select>
             </div>
           </div>
-        )}
-        
-        {/* Mensaje cuando no hay alumnos */}
-        {students.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-md p-12 text-center">
-            <div className="max-w-md mx-auto">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Aún no hay alumnos registrados
-              </h3>
-              <p className="text-gray-600">
-                Los alumnos aparecerán aquí una vez que se complete el formulario de registro.
-              </p>
+
+          {/* Botón limpiar filtros */}
+          {(searchTerm || selectedDiscipline !== 'all' || selectedGym !== 'all') && (
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => {
+                  setSearchTerm('')
+                  setSelectedDiscipline('all')
+                  setSelectedGym('all')
+                }}
+                className="text-green-600 hover:text-green-700 font-semibold text-sm"
+              >
+                ✕ Limpiar filtros
+              </button>
             </div>
-          </div>
-        ) : filteredStudents.length === 0 ? (
+          )}
+        </div>
+
+        {/* Grid de alumnos */}
+        {filteredStudents.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">
-              No se encontraron alumnos con los filtros seleccionados
-            </p>
+            <p className="text-gray-600 text-lg">No se encontraron alumnos con esos criterios.</p>
+            <button
+              onClick={() => {
+                setSearchTerm('')
+                setSelectedDiscipline('all')
+                setSelectedGym('all')
+              }}
+              className="mt-4 text-green-600 hover:text-green-700 font-semibold"
+            >
+              Ver todos los alumnos
+            </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredStudents.map((student) => (
               <div 
-                key={student.id} 
-                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300"
+                key={student.id}
+                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition"
               >
                 {/* Foto */}
                 <div className="relative h-64 bg-gray-200">
-                  <Image
-                    src={student.photo_url || 'https://via.placeholder.com/400x400?text=Sin+Foto'}
-                    alt={student.name}
-                    fill
-                    className="object-cover"
-                  />
+                  {student.photo_url ? (
+                    <Image
+                      src={student.photo_url}
+                      alt={student.name}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-green-600 to-green-800">
+                      <span className="text-6xl text-white opacity-50">👤</span>
+                    </div>
+                  )}
                 </div>
-                
+
                 {/* Info */}
-                <div className="p-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                <div className="p-4">
+                  <h3 className="font-bold text-lg text-gray-900 truncate">
                     {student.name}
-                  </h2>
+                  </h3>
                   
-                  <div className="space-y-2">
+                  <div className="mt-2 space-y-1">
                     {student.discipline && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Disciplina:</span>
-                        <span className="font-semibold text-gray-900">{student.discipline}</span>
-                      </div>
+                      <p className="text-sm text-gray-600">
+                        <span className="font-semibold">Disciplina:</span> {student.discipline}
+                      </p>
                     )}
                     
                     {student.belt_level && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Nivel:</span>
-                        <span className="font-semibold text-gray-900">{student.belt_level}</span>
-                      </div>
+                      <p className="text-sm text-gray-600">
+                        <span className="font-semibold">Grado:</span>{' '}
+                        <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded text-xs font-bold">
+                          {student.belt_level}
+                        </span>
+                      </p>
                     )}
-                    
+
                     {student.weight_kg && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Peso:</span>
-                        <span className="font-semibold text-gray-900">{student.weight_kg} kg</span>
-                      </div>
+                      <p className="text-xs text-gray-500">
+                        Peso: {student.weight_kg} kg
+                      </p>
                     )}
-                    
-                    {student.height_cm && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Altura:</span>
-                        <span className="font-semibold text-gray-900">{student.height_cm} cm</span>
-                      </div>
-                    )}
-                    
+
                     {student.gym && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Filial:</span>
-                        <span className="font-semibold text-gray-900">{student.gym}</span>
-                      </div>
+                      <p className="text-xs text-gray-500">
+                        📍 {student.gym}
+                      </p>
                     )}
+
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <span className="inline-block bg-green-100 text-green-700 text-xs px-2 py-1 rounded font-semibold">
+                        ✓ Activo
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>

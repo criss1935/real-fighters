@@ -161,7 +161,7 @@ export default function TiendaPage() {
       return;
     }
 
-    const whatsappNumber = '525588419852';
+    const whatsappNumber = '5535147658';
     let message = '¡Hola! Me gustaría ordenar lo siguiente:%0A%0A';
 
     cart.forEach(item => {

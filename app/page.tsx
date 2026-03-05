@@ -1,487 +1,496 @@
-import Link from 'next/link';
-import { ChevronRight, DollarSign, Calendar as CalendarIcon, Users } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+'use client'
 import Image from 'next/image';
+import Link from 'next/link';
 
-async function getLatestAnnouncements() {
-  const { data, error } = await supabase
-    .from('announcements')
-    .select('*')
-    .eq('published', true)
-    .order('created_at', { ascending: false })
-    .limit(3);
-
-  if (error) {
-    console.error('Error fetching announcements:', error);
-    return [];
-  }
-
-  return data || [];
-}
-
-export const revalidate = 60;
-
-export default async function Home() {
-  const announcements = await getLatestAnnouncements();
-
+export default function HomePage() {
   return (
-    <div>
-      {/* Hero Section con Logo de Fondo */}
-      <section className="relative bg-gradient-to-r from-gray-900 to-gray-800 text-white py-32 overflow-hidden">
-        {/* Logo de fondo */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-10">
+    <div className="min-h-screen">
+      {/* SECCIÓN 1: HERO - NEGRO CON IMAGEN DE FONDO */}
+      <section className="relative min-h-screen flex items-center justify-center bg-black">
+        {/* Imagen de fondo con overlay */}
+        <div className="absolute inset-0">
           <Image
-            src="/logo-realfighters.jpg"
-            alt="Real Fighters Logo"
-            width={600}
-            height={600}
-            className="object-contain"
+            src="/hero-mma.jpg"
+            alt="MMA Training"
+            fill
+            className="object-cover opacity-30"
+            priority
+            onError={(e) => {
+              e.currentTarget.style.display = 'none'
+            }}
           />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black"></div>
         </div>
-        
-        {/* Contenido del Hero */}
-        <div className="container mx-auto px-4 text-center relative z-10">
-          <h1 className="text-6xl font-bold mb-6">
-            Real Fighters
+
+        <div className="relative z-10 text-center px-4 max-w-5xl mx-auto">
+          <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
+            Bienvenidos a<br />Real Fighters México
           </h1>
-          <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl md:text-2xl text-gray-300 mb-12 max-w-3xl mx-auto">
             Portal profesional de peleadores. Perfiles verificados, récords actualizados, historial completo de combates.
           </p>
-          <div className="flex gap-4 justify-center">
-            <Link 
-              href="/fighters"
-              className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-lg font-semibold transition"
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="#horarios"
+              className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-lg text-lg font-semibold transition transform hover:scale-105 shadow-lg"
             >
-              Ver Peleadores
+              Clases y Horarios
             </Link>
-            <Link 
-              href="/events"
-              className="bg-gray-700 hover:bg-gray-600 text-white px-8 py-3 rounded-lg font-semibold transition"
+            <Link
+              href="#precios"
+              className="bg-white hover:bg-gray-100 text-gray-900 px-8 py-4 rounded-lg text-lg font-semibold transition transform hover:scale-105 shadow-lg"
             >
-              Ver Eventos
+              Planes y Precios
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Latest News Section - ARRIBA */}
-      {announcements.length > 0 && (
-        <section className="py-16 bg-white">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-3xl font-bold text-gray-900">
-                Últimas Noticias
-              </h2>
-              {announcements.length >= 3 && (
-                <Link 
-                  href="/announcements"
-                  className="text-red-600 hover:text-red-700 font-semibold flex items-center gap-1"
-                >
-                  Ver todas
-                  <ChevronRight className="w-5 h-5" />
-                </Link>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {announcements.map((announcement) => (
-                <Link
-                  key={announcement.id}
-                  href={`/announcements/${announcement.id}`}
-                  className="bg-gray-50 rounded-lg shadow-md overflow-hidden hover:shadow-xl transition group"
-                >
-                  {announcement.featured_image_url && (
-                    <div className="h-48 overflow-hidden">
-                      <img 
-                        src={announcement.featured_image_url}
-                        alt={announcement.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                      />
-                    </div>
-                  )}
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-red-600 transition">
-                      {announcement.title}
-                    </h3>
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                      {announcement.excerpt || announcement.content.replace(/<[^>]*>/g, '').substring(0, 150) + '...'}
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-400">
-                        {new Date(announcement.created_at).toLocaleDateString('es-MX', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
-                      </span>
-                      <span className="text-red-600 font-semibold text-sm group-hover:underline">
-                        Leer más →
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* CLASES Y HORARIOS */}
-      <section className="py-16 bg-gray-50">
+      {/* SECCIÓN 2: ÚLTIMAS NOTICIAS - GRIS OSCURO */}
+      <section className="py-20 bg-gray-900">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Clases y Horarios
-            </h2>
-            <p className="text-gray-600">
-              Programas para todas las edades y niveles
-            </p>
+          <h2 className="text-4xl font-bold text-white text-center mb-12">Últimas Noticias</h2>
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {/* Card 1 */}
+            <Link href="/announcements" className="bg-gray-800 rounded-lg overflow-hidden hover:transform hover:scale-105 transition shadow-xl">
+              <div className="h-48 bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center">
+                <span className="text-6xl"></span>
+              </div>
+              <div className="p-6">
+                <h3 className="text-xl font-bold text-white mb-2">Próximos Eventos</h3>
+                <p className="text-gray-400 text-sm mb-4">Conoce los próximos combates y competencias</p>
+                <span className="text-red-500 hover:text-red-400 font-semibold text-sm">
+                  Leer más →
+                </span>
+              </div>
+            </Link>
+
+            {/* Card 2 */}
+            <Link href="/fighters" className="bg-gray-800 rounded-lg overflow-hidden hover:transform hover:scale-105 transition shadow-xl">
+              <div className="h-48 bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center">
+                <span className="text-6xl"></span>
+              </div>
+              <div className="p-6">
+                <h3 className="text-xl font-bold text-white mb-2">Nuestros Peleadores</h3>
+                <p className="text-gray-400 text-sm mb-4">Conoce a nuestros atletas de alto rendimiento</p>
+                <span className="text-red-500 hover:text-red-400 font-semibold text-sm">
+                  Ver peleadores →
+                </span>
+              </div>
+            </Link>
+
+            {/* Card 3 */}
+            <Link href="/announcements" className="bg-gray-800 rounded-lg overflow-hidden hover:transform hover:scale-105 transition shadow-xl">
+              <div className="h-48 bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center">
+                <span className="text-6xl"></span>
+              </div>
+              <div className="p-6">
+                <h3 className="text-xl font-bold text-white mb-2">Anuncios Importantes</h3>
+                <p className="text-gray-400 text-sm mb-4">Mantente informado sobre cambios y novedades</p>
+                <span className="text-red-500 hover:text-red-400 font-semibold text-sm">
+                  Leer más →
+                </span>
+              </div>
+            </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* MMA KIDS A */}
-            <div className="bg-white p-6 rounded-lg shadow-md border-t-4 border-red-600">
-              <h3 className="text-xl font-bold text-gray-900 mb-3">MMA KIDS A</h3>
-              <p className="text-sm text-gray-600 mb-2">Programa específico para niños de:</p>
-              <p className="font-semibold text-red-600 mb-3">4 hasta 8 años de edad</p>
-              <div className="text-sm text-gray-700">
-                <p className="mb-1"><strong>Días:</strong> Lunes / Miércoles / Viernes</p>
-                <p><strong>Horario:</strong> 16:00 a 17:00 hrs</p>
+          <div className="text-center mt-12">
+            <Link
+              href="/announcements"
+              className="inline-block bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-lg font-semibold transition shadow-lg"
+            >
+              Ver Todas las Noticias
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* SECCIÓN 3: CLASES Y HORARIOS - NEGRO */}
+      <section id="horarios" className="py-20 bg-black">
+        <div className="container mx-auto px-4">
+          <h2 className="text-4xl font-bold text-white text-center mb-4">Clases y Horarios</h2>
+          <p className="text-gray-400 text-center mb-12 max-w-2xl mx-auto">
+            Entrenamientos profesionales con los mejores coaches
+          </p>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+            {/* MMA */}
+            <div className="bg-gradient-to-br from-red-900 to-red-800 rounded-lg p-6 hover:transform hover:scale-105 transition shadow-xl">
+              <div className="w-16 h-16 bg-red-700 rounded-lg flex items-center justify-center mb-4">
+                <span className="text-3xl"></span>
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-3">MMA</h3>
+              <p className="text-red-100 mb-4">Artes Marciales Mixtas - Técnica completa</p>
+              <div className="text-sm text-red-100 space-y-1">
+                <p><strong>Adultos:</strong> Lun-Vie 7am-9am, 7pm-9pm</p>
+                <p><strong>Precio:</strong> Incluido en planes</p>
               </div>
             </div>
 
-            {/* MMA KIDS B */}
-            <div className="bg-white p-6 rounded-lg shadow-md border-t-4 border-red-600">
-              <h3 className="text-xl font-bold text-gray-900 mb-3">MMA KIDS B</h3>
-              <p className="text-sm text-gray-600 mb-2">Programa específico para niños de:</p>
-              <p className="font-semibold text-red-600 mb-3">8 hasta 11 años de edad</p>
-              <div className="text-sm text-gray-700">
-                <p className="mb-1"><strong>Días:</strong> Lunes / Miércoles / Viernes</p>
-                <p><strong>Horario:</strong> 17:00 a 18:00 hrs</p>
+            {/* Muay Thai */}
+            <div className="bg-gradient-to-br from-orange-900 to-orange-800 rounded-lg p-6 hover:transform hover:scale-105 transition shadow-xl">
+              <div className="w-16 h-16 bg-orange-700 rounded-lg flex items-center justify-center mb-4">
+                <span className="text-3xl"></span>
               </div>
-            </div>
-
-            {/* BOX KIDS B */}
-            <div className="bg-white p-6 rounded-lg shadow-md border-t-4 border-red-600">
-              <h3 className="text-xl font-bold text-gray-900 mb-3">BOX KIDS B</h3>
-              <p className="text-sm text-gray-600 mb-2">Programa específico para niños de:</p>
-              <p className="font-semibold text-red-600 mb-3">6 hasta 11 años de edad</p>
-              <div className="text-sm text-gray-700">
-                <p className="mb-1"><strong>Días:</strong> Lunes a Viernes</p>
-                <p><strong>Horario:</strong> 17:00 a 18:00 hrs</p>
-              </div>
-            </div>
-
-            {/* MMA JUVENIL A */}
-            <div className="bg-white p-6 rounded-lg shadow-md border-t-4 border-red-600">
-              <h3 className="text-xl font-bold text-gray-900 mb-3">MMA JUVENIL A</h3>
-              <p className="text-sm text-gray-600 mb-2">Programa específico para jóvenes de:</p>
-              <p className="font-semibold text-red-600 mb-3">12 hasta 15 años de edad</p>
-              <div className="text-sm text-gray-700">
-                <p className="mb-1"><strong>Días:</strong> Lunes / Miércoles / Viernes</p>
-                <p><strong>Horario:</strong> 18:00 a 19:00 hrs</p>
-              </div>
-            </div>
-
-            {/* MMA JUVENIL B */}
-            <div className="bg-white p-6 rounded-lg shadow-md border-t-4 border-red-600">
-              <h3 className="text-xl font-bold text-gray-900 mb-3">MMA JUVENIL B</h3>
-              <p className="text-sm text-gray-600 mb-2">Programa específico para jóvenes de:</p>
-              <p className="font-semibold text-red-600 mb-3">15 hasta 17 años de edad</p>
-              <div className="text-sm text-gray-700">
-                <p className="mb-1"><strong>Días:</strong> Lunes / Miércoles / Viernes</p>
-                <p><strong>Horario:</strong> 19:00 a 20:00 hrs</p>
-              </div>
-            </div>
-
-            {/* MMA ADULTOS */}
-            <div className="bg-white p-6 rounded-lg shadow-md border-t-4 border-red-600">
-              <h3 className="text-xl font-bold text-gray-900 mb-3">MMA ADULTOS</h3>
-              <p className="text-sm text-gray-600 mb-2">Programa para adultos de:</p>
-              <p className="font-semibold text-red-600 mb-3">18 años de edad en adelante</p>
-              <div className="text-sm text-gray-700">
-                <p className="mb-1"><strong>Días:</strong> Lunes / Miércoles / Viernes</p>
-                <p><strong>Horarios:</strong></p>
-                <p>• 7:00 a 8:00 am</p>
-                <p>• 9:00 a 10:30 am</p>
-                <p>• 20:00 a 21:30 hrs</p>
-              </div>
-            </div>
-
-            {/* MUAY THAI */}
-            <div className="bg-white p-6 rounded-lg shadow-md border-t-4 border-red-600">
-              <h3 className="text-xl font-bold text-gray-900 mb-3">MUAY THAI</h3>
-              <p className="text-sm text-gray-600 mb-2">Programa para jóvenes y adultos de:</p>
-              <p className="font-semibold text-red-600 mb-3">11 años de edad en adelante</p>
-              <div className="text-sm text-gray-700">
-                <p className="mb-1"><strong>Días:</strong> Martes / Jueves / Sábado</p>
-                <p><strong>Horarios:</strong></p>
-                <p>• 9:00 a 10:30 am (Sábado)</p>
-                <p>• 19:00 a 20:00 hrs (Principiantes)</p>
-                <p>• 20:00 a 21:30 hrs (Todos los niveles)</p>
+              <h3 className="text-2xl font-bold text-white mb-3">Muay Thai</h3>
+              <p className="text-orange-100 mb-4">El arte de las 8 extremidades</p>
+              <div className="text-sm text-orange-100 space-y-1">
+                <p><strong>Horario:</strong> Lun-Vie 6pm-8pm</p>
+                <p><strong>Precio:</strong> Incluido en planes</p>
               </div>
             </div>
 
             {/* BJJ */}
-            <div className="bg-white p-6 rounded-lg shadow-md border-t-4 border-red-600">
-              <h3 className="text-xl font-bold text-gray-900 mb-3">BJJ (JIU JITSU BRASILEÑO)</h3>
-              <p className="text-sm text-gray-600 mb-2">Programa para jóvenes y adultos de:</p>
-              <p className="font-semibold text-red-600 mb-3">11 años de edad en adelante</p>
-              <div className="text-sm text-gray-700">
-                <p className="mb-1"><strong>Días:</strong> Martes y Jueves</p>
-                <p><strong>Horarios:</strong></p>
-                <p>• 7:00 a 8:30 am</p>
-                <p>• 20:00 a 21:30 hrs</p>
+            <div className="bg-gradient-to-br from-blue-900 to-blue-800 rounded-lg p-6 hover:transform hover:scale-105 transition shadow-xl">
+              <div className="w-16 h-16 bg-blue-700 rounded-lg flex items-center justify-center mb-4">
+                <span className="text-3xl"></span>
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-3">Brazilian Jiu-Jitsu</h3>
+              <p className="text-blue-100 mb-4">El arte suave - Grappling y sumisiones</p>
+              <div className="text-sm text-blue-100 space-y-1">
+                <p><strong>Horario:</strong> Mar-Jue-Sab 8am-10am</p>
+                <p><strong>Precio:</strong> Incluido en planes</p>
               </div>
             </div>
 
-            {/* BOXEO MEXICANO */}
-            <div className="bg-white p-6 rounded-lg shadow-md border-t-4 border-red-600">
-              <h3 className="text-xl font-bold text-gray-900 mb-3">BOXEO MEXICANO</h3>
-              <p className="text-sm text-gray-600 mb-2">Programa para jóvenes y adultos de:</p>
-              <p className="font-semibold text-red-600 mb-3">10 años de edad en adelante</p>
-              <div className="text-sm text-gray-700">
-                <p className="mb-1"><strong>Días:</strong> Lunes a Viernes</p>
-                <p><strong>Horarios:</strong></p>
-                <p>• 7:00 a 11:00 am</p>
-                <p>• 18:00 a 22:00 hrs</p>
+            {/* Boxeo */}
+            <div className="bg-gradient-to-br from-yellow-900 to-yellow-800 rounded-lg p-6 hover:transform hover:scale-105 transition shadow-xl">
+              <div className="w-16 h-16 bg-yellow-700 rounded-lg flex items-center justify-center mb-4">
+                <span className="text-3xl"></span>
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-3">Boxeo</h3>
+              <p className="text-yellow-100 mb-4">El noble arte del pugilismo</p>
+              <div className="text-sm text-yellow-100 space-y-1">
+                <p><strong>Horario:</strong> Lun-Vie 6am-8am, 6pm-8pm</p>
+                <p><strong>Precio:</strong> Plan Box $1,200/mes</p>
               </div>
             </div>
 
-            {/* CROSSFIT */}
-            <div className="bg-white p-6 rounded-lg shadow-md border-t-4 border-red-600">
-              <h3 className="text-xl font-bold text-gray-900 mb-3">CROSSFIT</h3>
-              <p className="text-sm text-gray-600 mb-2">Programa para jóvenes y adultos de:</p>
-              <p className="font-semibold text-red-600 mb-3">11 años de edad en adelante</p>
-              <div className="text-sm text-gray-700">
-                <p className="mb-1"><strong>Días:</strong> Lunes a Sábado</p>
-                <p><strong>Horarios:</strong></p>
-                <p>17:00 / 18:00 / 19:00 / 20:00 / 21:00 hrs</p>
+            {/* CrossFit */}
+            <div className="bg-gradient-to-br from-green-900 to-green-800 rounded-lg p-6 hover:transform hover:scale-105 transition shadow-xl">
+              <div className="w-16 h-16 bg-green-700 rounded-lg flex items-center justify-center mb-4">
+                <span className="text-3xl"></span>
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-3">CrossFit</h3>
+              <p className="text-green-100 mb-4">Acondicionamiento físico funcional</p>
+              <div className="text-sm text-green-100 space-y-1">
+                <p><strong>Horario:</strong> Lun-Vie 6am-7am, 7pm-8pm</p>
+                <p><strong>Precio:</strong> Plan CrossFit $1,200/mes</p>
               </div>
             </div>
 
-            {/* PELEADORES PROFESIONALES */}
-            <div className="bg-white p-6 rounded-lg shadow-md border-t-4 border-red-600">
-              <h3 className="text-xl font-bold text-gray-900 mb-3">PELEADORES PROFESIONALES</h3>
-              <p className="text-sm text-gray-600 mb-2">Entrenamiento avanzado para:</p>
-              <p className="font-semibold text-red-600 mb-3">Peleadores profesionales y semi-pro</p>
-              <div className="text-sm text-gray-700">
-                <p className="mb-1"><strong>Lunes a Viernes:</strong></p>
-                <p>11:00 AM - 2:00 PM</p>
-                <p>8:00 PM - 10:00 PM</p>
-                <p className="mb-1 mt-2"><strong>Domingo:</strong></p>
-                <p>12:00 PM</p>
+            {/* Capoeira */}
+            <div className="bg-gradient-to-br from-purple-900 to-purple-800 rounded-lg p-6 hover:transform hover:scale-105 transition shadow-xl">
+              <div className="w-16 h-16 bg-purple-700 rounded-lg flex items-center justify-center mb-4">
+                <span className="text-3xl"></span>
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-3">Capoeira</h3>
+              <p className="text-purple-100 mb-4">Arte marcial brasileño con música</p>
+              <div className="text-sm text-purple-100 space-y-1">
+                <p><strong>Horario:</strong> Sábados 10am-12pm</p>
+                <p><strong>Precio:</strong> Incluido en planes</p>
               </div>
             </div>
+
+            {/* MMA Kids */}
+            <div className="bg-gradient-to-br from-pink-900 to-pink-800 rounded-lg p-6 hover:transform hover:scale-105 transition shadow-xl">
+              <div className="w-16 h-16 bg-pink-700 rounded-lg flex items-center justify-center mb-4">
+                <span className="text-3xl"></span>
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-3">MMA Kids</h3>
+              <p className="text-pink-100 mb-4">Clases para niños 4-11 años</p>
+              <div className="text-sm text-pink-100 space-y-1">
+                <p><strong>Horario:</strong> Lun-Mie-Vie 4pm-6pm</p>
+                <p><strong>Precio:</strong> Incluido en planes</p>
+              </div>
+            </div>
+
+            {/* Box Kids */}
+            <div className="bg-gradient-to-br from-indigo-900 to-indigo-800 rounded-lg p-6 hover:transform hover:scale-105 transition shadow-xl">
+              <div className="w-16 h-16 bg-indigo-700 rounded-lg flex items-center justify-center mb-4">
+                <span className="text-3xl"></span>
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-3">Box Kids</h3>
+              <p className="text-indigo-100 mb-4">Boxeo para niños y adolescentes</p>
+              <div className="text-sm text-indigo-100 space-y-1">
+                <p><strong>Horario:</strong> Mar-Jue 4pm-5pm</p>
+                <p><strong>Precio:</strong> Incluido en planes</p>
+              </div>
+            </div>
+
+            {/* Semi Pro y Profesionales */}
+            <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg p-6 hover:transform hover:scale-105 transition shadow-xl border-2 border-yellow-500">
+              <div className="w-16 h-16 bg-yellow-600 rounded-lg flex items-center justify-center mb-4">
+                <span className="text-3xl"></span>
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-3">Semi Pro y Profesionales</h3>
+              <p className="text-gray-100 mb-4">Alto rendimiento para competidores</p>
+              <div className="text-sm text-gray-100 space-y-1">
+                <p><strong>Horario:</strong> Lun-Vie 11am-2pm, 8pm-10pm</p>
+                <p><strong>Requisito:</strong> Evaluación previa</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-center mt-12">
+            <Link
+              href="/clases"
+              className="inline-block bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-lg font-semibold transition shadow-lg"
+            >
+              Ver Todas las Clases
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* PLANES Y COSTOS */}
-      <section className="py-16 bg-white">
+      {/* SECCIÓN 4: PLANES Y PRECIOS - GRIS OSCURO */}
+      <section id="precios" className="py-20 bg-gray-900">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Planes y Costos
-            </h2>
-            <p className="text-gray-600">
-              Elige el plan que mejor se adapte a tus necesidades
-            </p>
+          <h2 className="text-4xl font-bold text-white text-center mb-4">Planes y Precios</h2>
+          <p className="text-gray-400 text-center mb-12">Encuentra el plan perfecto para ti</p>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+            {/* Plan Básico */}
+            <div className="bg-gray-800 rounded-lg p-8 hover:transform hover:scale-105 transition border border-gray-700 shadow-xl">
+              <h3 className="text-2xl font-bold text-white mb-2">Plan Básico</h3>
+              <p className="text-gray-400 text-sm mb-6">Acceso a clases regulares</p>
+              <div className="text-5xl font-bold text-white mb-6">
+                $900<span className="text-lg text-gray-400 font-normal">/mes</span>
+              </div>
+              <ul className="space-y-3 mb-8 text-gray-300 text-sm">
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2">✓</span>
+                  <span>Todas las clases regulares</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2">✓</span>
+                  <span>Uso de instalaciones</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2">✓</span>
+                  <span>Vestuarios y duchas</span>
+                </li>
+              </ul>
+              <a
+                href="https://wa.me/525535147658?text=Hola,%20quiero%20información%20sobre%20el%20Plan%20Básico"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full bg-white hover:bg-gray-100 text-gray-900 text-center px-6 py-3 rounded-lg font-semibold transition"
+              >
+                Inscribirme
+              </a>
+            </div>
+
+            {/* Plan Box */}
+            <div className="bg-gray-800 rounded-lg p-8 hover:transform hover:scale-105 transition border border-gray-700 shadow-xl">
+              <h3 className="text-2xl font-bold text-white mb-2">Plan Box</h3>
+              <p className="text-gray-400 text-sm mb-6">Especialización en Boxeo</p>
+              <div className="text-5xl font-bold text-white mb-6">
+                $1,200<span className="text-lg text-gray-400 font-normal">/mes</span>
+              </div>
+              <ul className="space-y-3 mb-8 text-gray-300 text-sm">
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2">✓</span>
+                  <span>Clases de Boxeo ilimitadas</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2">✓</span>
+                  <span>Entrenamiento técnico</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2">✓</span>
+                  <span>Uso de instalaciones</span>
+                </li>
+              </ul>
+              <a
+                href="https://wa.me/525535147658?text=Hola,%20quiero%20información%20sobre%20el%20Plan%20Box"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full bg-white hover:bg-gray-100 text-gray-900 text-center px-6 py-3 rounded-lg font-semibold transition"
+              >
+                Inscribirme
+              </a>
+            </div>
+
+            {/* Plan CrossFit */}
+            <div className="bg-gray-800 rounded-lg p-8 hover:transform hover:scale-105 transition border border-gray-700 shadow-xl">
+              <h3 className="text-2xl font-bold text-white mb-2">Plan CrossFit</h3>
+              <p className="text-gray-400 text-sm mb-6">Acondicionamiento físico</p>
+              <div className="text-5xl font-bold text-white mb-6">
+                $1,200<span className="text-lg text-gray-400 font-normal">/mes</span>
+              </div>
+              <ul className="space-y-3 mb-8 text-gray-300 text-sm">
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2">✓</span>
+                  <span>CrossFit ilimitado</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2">✓</span>
+                  <span>WODs personalizados</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2">✓</span>
+                  <span>Área de pesas completa</span>
+                </li>
+              </ul>
+              <a
+                href="https://wa.me/525535147658?text=Hola,%20quiero%20información%20sobre%20el%20Plan%20CrossFit"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full bg-white hover:bg-gray-100 text-gray-900 text-center px-6 py-3 rounded-lg font-semibold transition"
+              >
+                Inscribirme
+              </a>
+            </div>
+
+            {/* Plan RFM - Destacado */}
+            <div className="bg-gradient-to-b from-red-900 to-red-800 rounded-lg p-8 hover:transform hover:scale-105 transition border-2 border-yellow-500 relative shadow-2xl">
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                <span className="bg-yellow-500 text-gray-900 px-4 py-1 rounded-full text-sm font-bold">
+                  MÁS POPULAR
+                </span>
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-2">Plan RFM</h3>
+              <p className="text-red-100 text-sm mb-6">Acceso total ilimitado</p>
+              <div className="text-5xl font-bold text-white mb-6">
+                $1,600<span className="text-lg text-red-100 font-normal">/mes</span>
+              </div>
+              <ul className="space-y-3 mb-8 text-red-50 text-sm">
+                <li className="flex items-start">
+                  <span className="text-yellow-400 mr-2">✓</span>
+                  <span>TODAS las clases ilimitadas</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-yellow-400 mr-2">✓</span>
+                  <span>Acceso 7 días a la semana</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-yellow-400 mr-2">✓</span>
+                  <span>Plan nutricional básico</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-yellow-400 mr-2">✓</span>
+                  <span>Seguimiento personalizado</span>
+                </li>
+              </ul>
+              <a
+                href="https://wa.me/525535147658?text=Hola,%20quiero%20información%20sobre%20el%20Plan%20RFM"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full bg-white hover:bg-gray-100 text-red-900 text-center px-6 py-3 rounded-lg font-bold transition"
+              >
+                Inscribirme Ahora
+              </a>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {/* PLAN BÁSICO */}
-            <div className="bg-gray-50 rounded-lg shadow-lg p-8 border-2 border-gray-200 hover:border-red-600 transition">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">PLAN BÁSICO</h3>
-              <p className="text-sm text-gray-600 mb-4">MMA o MUAY THAI o BJJ</p>
-              <div className="mb-6">
-                <span className="text-4xl font-bold text-red-600">$800</span>
-                <span className="text-gray-600"> / mensual</span>
-              </div>
-              <div className="space-y-2 mb-6">
-                <p className="text-gray-700">✓ Horario Libre</p>
-                <p className="text-gray-700">✓ 1 disciplina a elegir</p>
-              </div>
-            </div>
-
-            {/* PLAN BOX */}
-            <div className="bg-gray-50 rounded-lg shadow-lg p-8 border-2 border-gray-200 hover:border-red-600 transition">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">PLAN BOX</h3>
-              <p className="text-sm text-gray-600 mb-4">Boxeo Mexicano</p>
-              <div className="mb-6">
-                <span className="text-4xl font-bold text-red-600">$800</span>
-                <span className="text-gray-600"> / mensual</span>
-              </div>
-              <div className="space-y-2 mb-6">
-                <p className="text-gray-700">✓ Horario Libre</p>
-                <p className="text-gray-700">✓ Boxeo Mexicano</p>
-              </div>
-            </div>
-
-            {/* PLAN CROSSFIT */}
-            <div className="bg-gray-50 rounded-lg shadow-lg p-8 border-2 border-gray-200 hover:border-red-600 transition">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">PLAN CROSSFIT</h3>
-              <p className="text-sm text-gray-600 mb-4">Acondicionamiento funcional</p>
-              <div className="mb-6">
-                <span className="text-4xl font-bold text-red-600">$800</span>
-                <span className="text-gray-600"> / mensual</span>
-              </div>
-              <div className="space-y-2 mb-6">
-                <p className="text-gray-700">✓ Horario Libre</p>
-                <p className="text-gray-700">✓ CrossFit</p>
-              </div>
-            </div>
-
-            {/* PLAN #RFM - DESTACADO */}
-            <div className="bg-gradient-to-br from-red-600 to-red-700 rounded-lg shadow-xl p-8 border-2 border-red-600 transform md:scale-105 relative">
-              <div className="absolute top-0 right-0 bg-yellow-400 text-gray-900 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">
-                MÁS POPULAR
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-2">PLAN #RFM</h3>
-              <p className="text-sm text-red-100 mb-4">Todas las disciplinas incluidas</p>
-              <div className="mb-6">
-                <span className="text-4xl font-bold text-white">$1,500</span>
-                <span className="text-red-100"> / mensual</span>
-              </div>
-              <div className="space-y-2 mb-6">
-                <p className="text-white">✓ Todas las disciplinas</p>
-                <p className="text-white">✓ Horario Libre</p>
-                <p className="text-white">✓ Acceso ilimitado</p>
-              </div>
-            </div>
-
-            {/* DAY PASS */}
-            <div className="bg-gray-50 rounded-lg shadow-lg p-8 border-2 border-gray-200 hover:border-red-600 transition">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">DAY PASS</h3>
-              <p className="text-sm text-gray-600 mb-4">Acceso completo 1 día</p>
-              <div className="mb-6">
-                <span className="text-4xl font-bold text-red-600">$150</span>
-              </div>
-              <div className="space-y-2 mb-6">
-                <p className="text-gray-700">✓ 1 día completo</p>
-                <p className="text-gray-700">✓ Todas las clases</p>
-              </div>
-            </div>
-
-            {/* INSCRIPCIÓN */}
-            <div className="bg-gray-50 rounded-lg shadow-lg p-8 border-2 border-gray-200 col-span-1">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">INSCRIPCIÓN</h3>
-              <p className="text-sm text-gray-600 mb-4">(Cuota Mantenimiento Anual)</p>
-              <div className="space-y-3">
-                <div>
-                  <p className="text-sm text-gray-600">Nuevos Ingreso</p>
-                  <span className="text-3xl font-bold text-red-600">$1,000</span>
-                </div>
-                <div className="border-t pt-3">
-                  <p className="text-sm text-gray-600">Socio Activo</p>
-                  <span className="text-3xl font-bold text-red-600">$500</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* CTA Contacto */}
           <div className="text-center mt-12">
-            <p className="text-gray-600 mb-4">¿Tienes dudas sobre los planes?</p>
-            <a 
-              href="https://wa.me/525588419852"
+            <p className="text-gray-400 mb-4">¿Tienes dudas? Contáctanos por WhatsApp</p>
+            <a
+              href="https://wa.me/525535147658?text=Hola,%20quiero%20información%20sobre%20los%20planes"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-lg font-semibold transition"
+              className="inline-block bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-semibold transition shadow-lg"
             >
-              Contáctanos por WhatsApp
+              Chatear por WhatsApp
             </a>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-gray-300 py-12">
+      {/* SECCIÓN 5: UBICACIÓN Y CONTACTO - NEGRO */}
+      <section className="py-20 bg-black">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Dirección */}
-            <div>
-              <h3 className="text-white font-bold text-lg mb-4">Dirección</h3>
-              <p className="text-sm mb-4">
-                Calz. del Hueso 590, Coapa,<br />
-                Los Girasoles, Coyoacán, 04920<br />
-                Ciudad de México, CDMX
-              </p>
-              <a 
-                href="https://maps.google.com/?q=Calz.+del+Hueso+590,+Coapa,+Los+Girasoles,+Coyoacán,+04920+Ciudad+de+México"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded transition mt-2"
-              >
-                📍 Ver en Google Maps
-              </a>
-              <div className="mt-4">
-                <h4 className="text-white font-semibold mb-2">Horarios</h4>
-                <p className="text-xs">Lunes a Viernes: 7:00 AM - 10:00 PM</p>
-                <p className="text-xs">Sábados: 9:00 AM - 2:00 PM</p>
+          <h2 className="text-4xl font-bold text-white text-center mb-12">Visítanos</h2>
+
+          <div className="grid md:grid-cols-2 gap-12 max-w-6xl mx-auto">
+            {/* Mapa */}
+            <div className="bg-gray-900 rounded-lg overflow-hidden shadow-xl">
+              <div className="h-96">
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3765.538257132739!2d-99.12251052662423!3d19.30243604482848!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x85ce018d14f87053%3A0xd45df628e7cb4d3!2sReal%20Fighters%20M%C3%A9xico!5e0!3m2!1ses-419!2smx!4v1772743928302!5m2!1ses-419!2smx"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                ></iframe>
               </div>
             </div>
 
-            {/* Contacto */}
-            <div>
-              <h3 className="text-white font-bold text-lg mb-4">Contacto</h3>
-              <div className="space-y-2 text-sm">
-                <p>📞 Recepción: <a href="tel:5588419852" className="hover:text-red-500">55 8841 9852</a></p>
-                <p>📱 WhatsApp: <a href="https://wa.me/525588419852" target="_blank" rel="noopener noreferrer" className="hover:text-red-500">+52 55 8841 9852</a></p>
-                <p>📧 <a href="mailto:hola@realfighters.mx" className="hover:text-red-500">hola@realfighters.mx</a></p>
-                <p>📧 <a href="mailto:facturacion@realfighters.mx" className="hover:text-red-500">facturacion@realfighters.mx</a></p>
-                <p>📧 <a href="mailto:administracion@realfighters.mx" className="hover:text-red-500">administracion@realfighters.mx</a></p>
-              </div>
-            </div>
-
-            {/* Redes Sociales y Sugerencias */}
-            <div>
-              <h3 className="text-white font-bold text-lg mb-4">Síguenos</h3>
-              <div className="flex gap-4 mb-6">
+            {/* Información de contacto */}
+            <div className="space-y-8">
+              <div>
+                <h3 className="text-2xl font-bold text-white mb-4">Dirección</h3>
+                <p className="text-gray-300 text-lg leading-relaxed">
+                  Real Fighters México<br />
+                  Calz. del Hueso 590, Coapa<br />
+                  Los Girasoles, Coyoacán, 04920<br />
+                  Ciudad de México, CDMX
+                </p>
                 <a 
-                  href="https://www.instagram.com/realfightersmx/"
+                  href="https://share.google/wVhKbbWiCgj5gkGw1"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white w-12 h-12 rounded-full flex items-center justify-center transition transform hover:scale-110"
-                  title="Instagram"
+                  className="inline-block mt-4 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition"
                 >
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-                  </svg>
-                </a>
-                <a 
-                  href="https://www.facebook.com/RealFightersMexico"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-blue-600 hover:bg-blue-700 text-white w-12 h-12 rounded-full flex items-center justify-center transition transform hover:scale-110"
-                  title="Facebook"
-                >
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                  </svg>
+                  Ver en Google Maps
                 </a>
               </div>
 
-              <div className="mt-6">
-                <h4 className="text-white font-semibold mb-3">Sugerencias y Quejas</h4>
-                <a 
-                  href="https://wa.me/525588419852?text=Hola,%20tengo%20una%20sugerencia/queja"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2 rounded transition"
-                >
-                  📝 Enviar Sugerencia/Queja
-                </a>
+              <div>
+                <h3 className="text-2xl font-bold text-white mb-4">Horarios</h3>
+                <div className="text-gray-300 space-y-2">
+                  <p>Lunes a Viernes: 7:00 AM - 10:00 PM</p>
+                  <p>Sábados: 9:00 AM - 2:00 PM</p>
+                  <p>Domingos: Cerrado</p>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-2xl font-bold text-white mb-4">Contacto</h3>
+                <div className="space-y-3">
+                  <p className="text-gray-300">
+                    <strong className="text-white">Teléfono:</strong><br />
+                    <a href="tel:+525535147658" className="hover:text-red-500 transition">
+                      +52 55 3514 7658
+                    </a>
+                  </p>
+                  <p className="text-gray-300">
+                    <strong className="text-white">Email:</strong><br />
+                    <a href="mailto:info@realfighters.mx" className="hover:text-red-500 transition">
+                      info@realfighters.mx
+                    </a>
+                  </p>
+                  <a
+                    href="https://wa.me/525535147658?text=Hola,%20quiero%20más%20información"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition mt-2"
+                  >
+                    WhatsApp
+                  </a>
+                </div>
               </div>
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* Copyright */}
-          <div className="border-t border-gray-800 mt-8 pt-6 text-center text-sm">
-            <p>&copy; 2024 Real Fighters. Todos los derechos reservados.</p>
-            <p className="text-xs text-gray-500 mt-2">
-              Todos los datos son publicados con consentimiento explícito. 
+      {/* Footer */}
+      <footer className="bg-gray-950 text-gray-400 py-12 border-t border-gray-800">
+        <div className="container mx-auto px-4">
+          <div className="text-center">
+            <p className="mb-2">&copy; 2024 Real Fighters México. Todos los derechos reservados.</p>
+            <p className="text-xs text-gray-500">
               Para correcciones: <a href="mailto:info@realfighters.mx" className="text-red-500 hover:underline">info@realfighters.mx</a>
+            </p>
+            <p className="text-xs text-gray-500 mt-2">
+              <Link href="/aviso-privacidad" className="text-red-500 hover:underline">
+                Aviso de Privacidad
+              </Link>
             </p>
           </div>
         </div>
