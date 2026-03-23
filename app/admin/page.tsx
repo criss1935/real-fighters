@@ -9,6 +9,19 @@ import { uploadImage, validateImageFile, deleteImage } from '@/lib/upload-image'
 
 type TabType = 'students' | 'fighters' | 'events' | 'fights' | 'announcements' | 'filiales' | 'classes' | 'plans';
 
+// ============ REVALIDATE HELPER ============
+async function revalidatePage(path: string) {
+  try {
+    await fetch('/api/revalidate', {
+      method: 'POST',
+      body: JSON.stringify({ path })
+    })
+    console.log(`✅ Revalidated: ${path}`)
+  } catch (error) {
+    console.error(`Error revalidating ${path}:`, error)
+  }
+}
+
 export default function AdminPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
@@ -307,6 +320,8 @@ export default function AdminPage() {
       const { error } = await supabase.from('students').delete().eq('id', id)
       if (error) throw error
 
+      await revalidatePage('/students')
+
       setMessage({ type: 'success', text: '✅ Alumno eliminado exitosamente' })
       loadStats()
       loadStudents()
@@ -315,7 +330,7 @@ export default function AdminPage() {
     }
   }
 
-  // ============ FIGHTERS FUNCTIONS ============
+  // ============ FIGHTERS FUNCTIONS (COLUMNAS EN ESPAÑOL) ============
   function handleFighterImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -331,13 +346,42 @@ export default function AdminPage() {
   }
 
   async function loadFighters() {
-    const { data } = await supabase.from('fighters').select('*').eq('is_active', true).order('name')
-    setFighters(data || [])
+    const { data } = await supabase
+      .from('fighters')
+      .select('*')
+      .eq('activo', true)
+      .order('nombre')
+    
+    if (data) {
+      setFighters(data.map((f: any) => ({
+        id: f.id,
+        name: f.nombre,
+        nickname: f.apodo,
+        division: f.division,
+        gym: f.gimnasio,
+        photo_url: f.foto_url,
+        is_active: f.activo
+      })))
+    }
   }
 
   async function loadAllFighters() {
-    const { data } = await supabase.from('fighters').select('*').order('name')
-    setAllFighters(data || [])
+    const { data } = await supabase
+      .from('fighters')
+      .select('*')
+      .order('nombre')
+    
+    if (data) {
+      setAllFighters(data.map((f: any) => ({
+        id: f.id,
+        name: f.nombre,
+        nickname: f.apodo,
+        division: f.division,
+        gym: f.gimnasio,
+        photo_url: f.foto_url,
+        is_active: f.activo
+      })))
+    }
   }
 
   async function handleCreateOrUpdateFighter(e: React.FormEvent) {
@@ -360,21 +404,25 @@ export default function AdminPage() {
       }
 
       const fighterData = {
-        name: fighterForm.name,
-        nickname: fighterForm.nickname || null,
+        nombre: fighterForm.name,
+        apodo: fighterForm.nickname || null,
         division: fighterForm.division || null,
-        gym: fighterForm.gym || null,
-        photo_url: photoUrl || null,
-        is_active: fighterForm.is_active,
-        discipline: 'MMA'
+        gimnasio: fighterForm.gym || null,
+        foto_url: photoUrl || null,
+        activo: fighterForm.is_active,
       }
 
       if (fighterForm.id) {
-        const { error } = await supabase.from('fighters').update(fighterData).eq('id', fighterForm.id)
+        const { error } = await supabase
+          .from('fighters')
+          .update(fighterData)
+          .eq('id', fighterForm.id)
         if (error) throw error
         setMessage({ type: 'success', text: '✅ Peleador actualizado exitosamente' })
       } else {
-        const { error } = await supabase.from('fighters').insert(fighterData)
+        const { error } = await supabase
+          .from('fighters')
+          .insert(fighterData)
         if (error) throw error
         setMessage({ type: 'success', text: '✅ Peleador creado exitosamente' })
       }
@@ -393,9 +441,13 @@ export default function AdminPage() {
 
   function handleEditFighter(fighter: any) {
     setFighterForm({
-      id: fighter.id, name: fighter.name, nickname: fighter.nickname || '', 
-      division: fighter.division || '', gym: fighter.gym || '', 
-      photo_url: fighter.photo_url || '', is_active: fighter.is_active
+      id: fighter.id,
+      name: fighter.name,
+      nickname: fighter.nickname || '',
+      division: fighter.division || '',
+      gym: fighter.gym || '',
+      photo_url: fighter.photo_url || '',
+      is_active: fighter.is_active
     })
     setFighterImagePreview(fighter.photo_url || '')
     setFighterImageFile(null)
@@ -419,6 +471,9 @@ export default function AdminPage() {
       const { error } = await supabase.from('fighters').delete().eq('id', id)
       if (error) throw error
 
+      await revalidatePage('/fighters')
+      await revalidatePage('/fighters/[id]')
+
       setMessage({ type: 'success', text: '✅ Peleador eliminado exitosamente' })
       loadStats()
       loadFighters()
@@ -430,7 +485,10 @@ export default function AdminPage() {
 
   async function handleToggleFighterActive(fighter: any) {
     try {
-      const { error } = await supabase.from('fighters').update({ is_active: !fighter.is_active }).eq('id', fighter.id)
+      const { error } = await supabase
+        .from('fighters')
+        .update({ activo: !fighter.is_active })
+        .eq('id', fighter.id)
       if (error) throw error
 
       setMessage({ type: 'success', text: `✅ Peleador ${!fighter.is_active ? 'activado' : 'desactivado'} exitosamente` })
@@ -514,6 +572,7 @@ export default function AdminPage() {
     try {
       const updatedFiliales = filialesData.filter(f => f.id !== id)
       await saveConfigData('filiales', updatedFiliales)
+      await revalidatePage('/')
     } catch (error: any) {
       setMessage({ type: 'error', text: `❌ Error: ${error.message}` })
     }
@@ -594,6 +653,7 @@ export default function AdminPage() {
     try {
       const updatedClasses = classesData.filter(c => c.slug !== slug)
       await saveConfigData('classes', updatedClasses)
+      await revalidatePage('/clases')
     } catch (error: any) {
       setMessage({ type: 'error', text: `❌ Error: ${error.message}` })
     }
@@ -635,6 +695,7 @@ export default function AdminPage() {
     try {
       const updatedPlans = plansData.filter(p => p.id !== id)
       await saveConfigData('plans', updatedPlans)
+      await revalidatePage('/')
     } catch (error: any) {
       setMessage({ type: 'error', text: `❌ Error: ${error.message}` })
     }
@@ -689,6 +750,9 @@ export default function AdminPage() {
     try {
       const { error } = await supabase.from('events').delete().eq('id', id)
       if (error) throw error
+
+      await revalidatePage('/events')
+      await revalidatePage('/events/[id]')
 
       setMessage({ type: 'success', text: '✅ Evento eliminado exitosamente' })
       loadStats()
@@ -818,6 +882,9 @@ export default function AdminPage() {
     try {
       const { error } = await supabase.from('announcements').delete().eq('id', id)
       if (error) throw error
+
+      await revalidatePage('/blog')
+      await revalidatePage('/announcements')
 
       setMessage({ type: 'success', text: '✅ Anuncio eliminado exitosamente' })
       loadStats()
@@ -1130,7 +1197,6 @@ function AdminStudentsTab({ studentForm, setStudentForm, studentImageFile, stude
       </h2>
 
       <form onSubmit={handleCreateOrUpdateStudent} className="space-y-6 mb-12 pb-12 border-b">
-        {/* Foto */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Foto del Alumno</label>
           <div className="space-y-3">
@@ -1163,7 +1229,6 @@ function AdminStudentsTab({ studentForm, setStudentForm, studentImageFile, stude
           </div>
         </div>
 
-        {/* Básico */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <input type="text" required value={studentForm.name} onChange={(e) => setStudentForm({...studentForm, name: e.target.value})} placeholder="Nombre Completo *" className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
           <input type="email" value={studentForm.email} onChange={(e) => setStudentForm({...studentForm, email: e.target.value})} placeholder="Email" className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />

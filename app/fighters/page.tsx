@@ -36,24 +36,29 @@ export default function FightersPage() {
       if (error) throw error
 
       if (data) {
-        // Cargar records
-        const { data: recordsData } = await supabase
-          .from('fighter_records')
-          .select('*')
-
-        // Mapear con nombres correctos
-        const mapped = data.map(f => ({
-          id: f.id,
-          name: f.nombre,
-          nickname: f.apodo,
-          division: f.division || f.categoria_peso,
-          discipline: f.disciplina,
-          gym: f.gimnasio || f.academia,
-          photo_url: f.foto_perfil || f.foto_url,
-          is_active: f.activo,
-          fighter_records: recordsData?.filter(r => r.fighter_id === f.id) || 
-                          [{ wins: 0, losses: 0, draws: 0, no_contest: 0 }]
-        }))
+        // Mapear con nombres correctos y parsear record
+        const mapped = data.map(f => {
+          // Parsear record_profesional (ej: "1-0", "4-2-0", "25-14")
+          const recordParts = (f.record_profesional || '0-0-0').split('-')
+          return {
+            id: f.id,
+            name: f.nombre,
+            nickname: f.apodo,
+            division: f.division || f.categoria_peso,
+            discipline: f.disciplina,
+            gym: f.gimnasio || f.academia,
+            photo_url: f.foto_perfil || f.foto_url,
+            is_active: f.activo,
+            record_profesional: f.record_profesional,
+            // Para compatibilidad con el código de display
+            fighter_records: [{
+              wins: parseInt(recordParts[0]) || 0,
+              losses: parseInt(recordParts[1]) || 0,
+              draws: parseInt(recordParts[2]) || 0,
+              no_contest: 0
+            }]
+          }
+        })
 
         console.log('✅ Peleadores mapeados:', mapped)
         setFighters(mapped)
@@ -63,7 +68,6 @@ export default function FightersPage() {
       setLoading(false)
     } catch (err: any) {
       console.error('ERROR:', err)
-      alert(`Error: ${err.message}`)
       setLoading(false)
     }
   }
@@ -133,7 +137,7 @@ export default function FightersPage() {
                 type="text"
                 placeholder="Ej: Juan Pérez o 'El Jaguar'"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => setSearchTerm((e.target as HTMLInputElement).value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
               />
             </div>
@@ -145,7 +149,7 @@ export default function FightersPage() {
               </label>
               <select
                 value={selectedDivision}
-                onChange={(e) => setSelectedDivision(e.target.value)}
+                onChange={(e) => setSelectedDivision((e.target as HTMLSelectElement).value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
               >
                 <option value="all">Todas las categorías</option>
@@ -162,7 +166,7 @@ export default function FightersPage() {
               </label>
               <select
                 value={selectedDiscipline}
-                onChange={(e) => setSelectedDiscipline(e.target.value)}
+                onChange={(e) => setSelectedDiscipline((e.target as HTMLSelectElement).value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
               >
                 <option value="all">Todas las disciplinas</option>
