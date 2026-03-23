@@ -84,7 +84,7 @@ export default function StudentsPage() {
         <div className="mb-8 max-w-5xl mx-auto">
           <div className="relative h-96 rounded-lg overflow-hidden shadow-xl">
             <Image
-              src="/team-photo.jpg"
+              src="/clases/equipo.jpg"
               alt="Foto de Equipo Real Fighters"
               fill
               className="object-cover"

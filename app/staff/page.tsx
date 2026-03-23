@@ -1,82 +1,82 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
 import Image from 'next/image'
 
 type StaffMember = {
   id: number
   name: string
   role: string
-  type: 'teacher' | 'staff'
+  type: 'coach' | 'staff'
   specialty?: string
   photo?: string
   bio?: string
+  certifications?: string
 }
 
-const staffData: StaffMember[] = [
-  // PROFESORES
-  {
-    id: 1,
-    name: 'Coach Principal',
-    role: 'Instructor MMA',
-    type: 'teacher',
-    specialty: 'MMA, Muay Thai',
-    bio: 'Más de 10 años de experiencia entrenando campeones.'
-  },
-  {
-    id: 2,
-    name: 'Profesor BJJ',
-    role: 'Instructor Brazilian Jiu-Jitsu',
-    type: 'teacher',
-    specialty: 'BJJ, Grappling',
-    bio: 'Cinturón negro con 15 años de experiencia.'
-  },
-  {
-    id: 3,
-    name: 'Coach Box',
-    role: 'Instructor de Boxeo',
-    type: 'teacher',
-    specialty: 'Boxeo',
-    bio: 'Ex-boxeador profesional con record de 20-5-0.'
-  },
-  {
-    id: 4,
-    name: 'Instructor CrossFit',
-    role: 'Coach de CrossFit',
-    type: 'teacher',
-    specialty: 'CrossFit, Acondicionamiento',
-    bio: 'Certificado Level 2 CrossFit.'
-  },
-
-  // STAFF GENERAL
-  {
-    id: 5,
-    name: 'Recepcionista',
-    role: 'Recepción',
-    type: 'staff',
-    bio: 'Atención al cliente y gestión de inscripciones.'
-  },
-  {
-    id: 6,
-    name: 'Administrador',
-    role: 'Administración',
-    type: 'staff',
-    bio: 'Gestión administrativa y contabilidad.'
-  },
-  {
-    id: 7,
-    name: 'Nutriólogo',
-    role: 'Nutrición Deportiva',
-    type: 'staff',
-    bio: 'Planes nutricionales personalizados para atletas.'
-  }
-]
-
 export default function StaffPage() {
-  const [activeTab, setActiveTab] = useState<'teachers' | 'staff'>('teachers')
+  const [staffData, setStaffData] = useState<StaffMember[]>([])
+  const [activeTab, setActiveTab] = useState<'coaches' | 'staff'>('coaches')
+  const [loading, setLoading] = useState(true)
 
-  const teachers = staffData.filter(s => s.type === 'teacher')
+  useEffect(() => {
+    loadStaffData()
+  }, [])
+
+  async function loadStaffData() {
+    try {
+      const { data, error } = await supabase
+        .from('staff')
+        .select('*')
+        .eq('is_active', true)
+        .order('full_name')
+
+      if (error) throw error
+
+      if (data) {
+        // Mapear datos de Supabase
+        const mapped = data.map((s: any) => {
+          // Determinar tipo basado en specialty/disciplines
+          const adminRoles = ['Recepcion', 'Administración', 'Administration', 'Reception']
+          const isAdmin = adminRoles.some(role => 
+            s.specialty?.toLowerCase().includes(role.toLowerCase()) ||
+            s.disciplines?.toLowerCase().includes(role.toLowerCase())
+          )
+
+          return {
+            id: s.id,
+            name: s.full_name,
+            role: s.specialty || s.disciplines || 'Staff',
+            type: isAdmin ? 'staff' : 'coach',
+            specialty: s.disciplines || s.specialty,
+            photo: s.photo_url,
+            bio: s.certifications, // Usar certifications como descripción
+            certifications: s.certifications
+          }
+        })
+
+        console.log('✅ Staff cargado:', mapped)
+        setStaffData(mapped)
+      }
+
+      setLoading(false)
+    } catch (err: any) {
+      console.error('ERROR cargando staff:', err)
+      setLoading(false)
+    }
+  }
+
+  const coaches = staffData.filter(s => s.type === 'coach')
   const staffGeneral = staffData.filter(s => s.type === 'staff')
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-600">Cargando equipo...</div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
@@ -93,14 +93,14 @@ export default function StaffPage() {
         <div className="flex justify-center mb-12">
           <div className="bg-white rounded-lg shadow-md p-2 inline-flex">
             <button
-              onClick={() => setActiveTab('teachers')}
+              onClick={() => setActiveTab('coaches')}
               className={`px-8 py-3 rounded-lg font-semibold transition ${
-                activeTab === 'teachers'
+                activeTab === 'coaches'
                   ? 'bg-red-600 text-white'
                   : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
-              👨‍🏫 Profesores
+              👨‍🏫 Coaches e Instructores ({coaches.length})
             </button>
             <button
               onClick={() => setActiveTab('staff')}
@@ -110,107 +110,117 @@ export default function StaffPage() {
                   : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
-              👥 Staff General
+              👥 Staff General ({staffGeneral.length})
             </button>
           </div>
         </div>
 
         {/* Content */}
         <div className="max-w-6xl mx-auto">
-          {activeTab === 'teachers' ? (
+          {activeTab === 'coaches' ? (
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
                 Instructores y Coaches
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {teachers.map((teacher) => (
-                  <div
-                    key={teacher.id}
-                    className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition"
-                  >
-                    {/* Foto */}
-                    <div className="relative h-64 bg-gray-200">
-                      {teacher.photo ? (
-                        <Image
-                          src={teacher.photo}
-                          alt={teacher.name}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-red-600 to-red-800">
-                          <span className="text-6xl text-white opacity-50">🥋</span>
-                        </div>
-                      )}
-                    </div>
+              {coaches.length === 0 ? (
+                <p className="text-center text-gray-600">No hay coaches registrados.</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {coaches.map((coach) => (
+                    <div
+                      key={coach.id}
+                      className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition"
+                    >
+                      {/* Foto */}
+                      <div className="relative h-64 bg-gray-200">
+                        {coach.photo ? (
+                          <Image
+                            src={coach.photo}
+                            alt={coach.name}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-red-600 to-red-800">
+                            <span className="text-6xl text-white opacity-50">🥋</span>
+                          </div>
+                        )}
+                      </div>
 
-                    {/* Info */}
-                    <div className="p-6">
-                      <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                        {teacher.name}
-                      </h3>
-                      <p className="text-red-600 font-semibold mb-3">
-                        {teacher.role}
-                      </p>
-                      {teacher.specialty && (
-                        <p className="text-sm text-gray-600 mb-3">
-                          <span className="font-semibold">Especialidad:</span> {teacher.specialty}
+                      {/* Info */}
+                      <div className="p-6">
+                        <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                          {coach.name}
+                        </h3>
+                        <p className="text-red-600 font-semibold mb-3">
+                          {coach.role}
                         </p>
-                      )}
-                      {teacher.bio && (
-                        <p className="text-gray-600 text-sm">
-                          {teacher.bio}
-                        </p>
-                      )}
+                        {coach.specialty && (
+                          <p className="text-sm text-gray-600 mb-3">
+                            <span className="font-semibold">Disciplinas:</span> {coach.specialty}
+                          </p>
+                        )}
+                        {coach.bio && (
+                          <div className="text-gray-600 text-sm">
+                            <p className="font-semibold mb-2">Certificaciones:</p>
+                            <p className="line-clamp-4">{coach.bio}</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
                 Personal Administrativo
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {staffGeneral.map((staff) => (
-                  <div
-                    key={staff.id}
-                    className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition"
-                  >
-                    {/* Foto */}
-                    <div className="relative h-64 bg-gray-200">
-                      {staff.photo ? (
-                        <Image
-                          src={staff.photo}
-                          alt={staff.name}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-600 to-blue-800">
-                          <span className="text-6xl text-white opacity-50">👤</span>
-                        </div>
-                      )}
-                    </div>
+              {staffGeneral.length === 0 ? (
+                <p className="text-center text-gray-600">No hay personal administrativo registrado.</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {staffGeneral.map((staff) => (
+                    <div
+                      key={staff.id}
+                      className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition"
+                    >
+                      {/* Foto */}
+                      <div className="relative h-64 bg-gray-200">
+                        {staff.photo ? (
+                          <Image
+                            src={staff.photo}
+                            alt={staff.name}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-600 to-blue-800">
+                            <span className="text-6xl text-white opacity-50">👤</span>
+                          </div>
+                        )}
+                      </div>
 
-                    {/* Info */}
-                    <div className="p-6">
-                      <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                        {staff.name}
-                      </h3>
-                      <p className="text-blue-600 font-semibold mb-3">
-                        {staff.role}
-                      </p>
-                      {staff.bio && (
-                        <p className="text-gray-600 text-sm">
-                          {staff.bio}
+                      {/* Info */}
+                      <div className="p-6">
+                        <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                          {staff.name}
+                        </h3>
+                        <p className="text-blue-600 font-semibold mb-3">
+                          {staff.role}
                         </p>
-                      )}
+                        {staff.bio && (
+                          <div className="text-gray-600 text-sm">
+                            <p className="font-semibold mb-2">Habilidades:</p>
+                            <p className="line-clamp-4">{staff.bio}</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -222,7 +232,7 @@ export default function StaffPage() {
             Estamos buscando profesionales apasionados por las artes marciales
           </p>
           <a
-            href="https://wa.me/525535147658?text=Hola,%20me%20interesa%20trabajar%20en%20Real%20Fighters"
+            href="https://wa.me/525535147658?text=Hola%2C%20me%20interesa%20trabajar%20en%20Real%20Fighters"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block bg-white hover:bg-gray-100 text-red-600 px-8 py-3 rounded-lg font-semibold transition"
