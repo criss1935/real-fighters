@@ -1,7 +1,9 @@
 import { mockEvents, mockEventFights } from '@/lib/mockData';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Calendar, MapPin, Building2 } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, Building2, Sparkles } from 'lucide-react';
+import { group } from 'console';
+import { SelectHTMLAttributes } from 'react';
 
 export default function EventDetailPage({ params }: { params: { id: string } }) {
   const event = mockEvents.find(e => e.id === parseInt(params.id));
@@ -131,3 +133,5 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
     </div>
   );
 }
+
+
