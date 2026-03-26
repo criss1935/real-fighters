@@ -230,10 +230,7 @@ export default function FightersPage() {
                         fill
                         className="object-cover"
                       />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-900">
-                        <span className="text-6xl text-white opacity-50">🥊</span>
-                      </div>
+                    ) : (<Image src="/banner2.jpeg" alt="Peleador sin foto" fill className="object-cover object-center" />
                     )}
                   </div>
 

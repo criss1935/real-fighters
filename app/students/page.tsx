@@ -205,10 +205,7 @@ export default function StudentsPage() {
                       fill
                       className="object-cover"
                     />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-green-600 to-green-800">
-                      <span className="text-6xl text-white opacity-50">👤</span>
-                    </div>
+                  ) : (<Image src="/banner2.jpeg" alt="Alumno sin foto" fill className="object-cover object-center" />
                   )}
                 </div>
 
