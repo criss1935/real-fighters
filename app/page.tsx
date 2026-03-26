@@ -10,7 +10,7 @@ export default function HomePage() {
       <section className="relative min-h-screen flex items-center justify-center bg-black">
         <div className="absolute inset-0">
           <Image
-            src="/hero-mma.jpg"
+            src="/banner1.jpeg"
             alt="MMA Training"
             fill
             className="object-cover opacity-30"
