@@ -975,16 +975,37 @@ function AdminFightersTab({ fighterForm, setFighterForm, fighterImageFile, fight
 }
 
 function AdminFilialesTab({ filialForm, setFilialForm, filialImageFile, filialImagePreview, handleFilialImageSelect, handleCreateOrUpdateFilial, uploadingFilialImage, filialesData, handleEditFilial, handleDeleteFilial, editingFilialId }: any) {
+  const addServicio = () => setFilialForm({...filialForm, servicios: [...(filialForm.servicios || []), '']})
+  const updateServicio = (i: number, val: string) => { const s = [...(filialForm.servicios || [])]; s[i] = val; setFilialForm({...filialForm, servicios: s}) }
+  const removeServicio = (i: number) => setFilialForm({...filialForm, servicios: filialForm.servicios.filter((_: any, idx: number) => idx !== i)})
+
+  const horariosDias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+  const updateHorario = (dia: string, val: string) => setFilialForm({...filialForm, horarios: {...(filialForm.horarios || {}), [dia]: val}})
+
+  const addPrecio = () => setFilialForm({...filialForm, precios: {...(filialForm.precios || {}), '': ''}})
+  const updatePrecioKey = (oldKey: string, newKey: string) => {
+    const p = {...(filialForm.precios || {})}
+    const val = p[oldKey]; delete p[oldKey]; p[newKey] = val
+    setFilialForm({...filialForm, precios: p})
+  }
+  const updatePrecioVal = (key: string, val: string) => setFilialForm({...filialForm, precios: {...(filialForm.precios || {}), [key]: val}})
+  const removePrecio = (key: string) => { const p = {...(filialForm.precios || {})}; delete p[key]; setFilialForm({...filialForm, precios: p}) }
+
   return (
     <div>
       <h2 className="text-xl font-bold text-gray-900 mb-6">{editingFilialId ? 'Editar Filial' : 'Crear Nueva Filial'}</h2>
       <form onSubmit={handleCreateOrUpdateFilial} className="space-y-6 mb-12 pb-12 border-b">
+
+        {/* Imagen */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Imagen</label>
           <input type="file" accept="image/*" onChange={handleFilialImageSelect} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100" />
           {filialImagePreview && <div className="mt-3"><img src={filialImagePreview} alt="Preview" className="w-32 h-32 object-cover rounded-lg border-2 border-gray-200" /></div>}
         </div>
+
+        {/* Datos básicos */}
         <input type="text" required value={filialForm.name} onChange={(e) => setFilialForm({...filialForm, name: e.target.value})} placeholder="Nombre *" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <input type="text" value={filialForm.address} onChange={(e) => setFilialForm({...filialForm, address: e.target.value})} placeholder="Dirección" className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
           <input type="tel" value={filialForm.phone} onChange={(e) => setFilialForm({...filialForm, phone: e.target.value})} placeholder="Teléfono" className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
@@ -995,18 +1016,77 @@ function AdminFilialesTab({ filialForm, setFilialForm, filialImageFile, filialIm
             <option value="Activa">Activa</option><option value="Inactiva">Inactiva</option><option value="Próximamente">Próximamente</option>
           </select>
         </div>
+
         <textarea value={filialForm.descripcion} onChange={(e) => setFilialForm({...filialForm, descripcion: e.target.value})} placeholder="Descripción de la filial" rows={3} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
+
+        {/* Horarios */}
+        <div>
+          <label className="block text-sm font-medium text-gray-900 mb-3">Horarios</label>
+          <div className="space-y-2">
+            {horariosDias.map(dia => (
+              <div key={dia} className="flex items-center gap-3">
+                <span className="text-sm font-medium text-gray-700 w-24">{dia}</span>
+                <input
+                  type="text"
+                  value={filialForm.horarios?.[dia] || ''}
+                  onChange={(e) => updateHorario(dia, e.target.value)}
+                  placeholder="ej: 7:00 AM - 10:00 PM o Cerrado"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Clases/Servicios */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <label className="block text-sm font-medium text-gray-900">Clases disponibles</label>
+            <button type="button" onClick={addServicio} className="text-sm bg-purple-100 hover:bg-purple-200 text-purple-700 px-3 py-1 rounded-lg transition">+ Agregar</button>
+          </div>
+          <div className="space-y-2">
+            {(filialForm.servicios || []).map((s: string, i: number) => (
+              <div key={i} className="flex gap-2">
+                <input type="text" value={s} onChange={(e) => updateServicio(i, e.target.value)} placeholder="ej: MMA, Muay Thai, Boxeo..." className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
+                <button type="button" onClick={() => removeServicio(i)} className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg"><X className="w-4 h-4" /></button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Precios */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <label className="block text-sm font-medium text-gray-900">Precios</label>
+            <button type="button" onClick={addPrecio} className="text-sm bg-purple-100 hover:bg-purple-200 text-purple-700 px-3 py-1 rounded-lg transition">+ Agregar</button>
+          </div>
+          <div className="space-y-2">
+            {Object.entries(filialForm.precios || {}).map(([plan, precio]) => (
+              <div key={plan} className="flex gap-2">
+                <input type="text" value={plan} onChange={(e) => updatePrecioKey(plan, e.target.value)} placeholder="Plan (ej: Mensual)" className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
+                <input type="text" value={precio as string} onChange={(e) => updatePrecioVal(plan, e.target.value)} placeholder="Precio (ej: $800)" className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
+                <button type="button" onClick={() => removePrecio(plan)} className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg"><X className="w-4 h-4" /></button>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <button type="submit" disabled={uploadingFilialImage} className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition disabled:opacity-50">
           {uploadingFilialImage ? 'Subiendo...' : (editingFilialId ? 'Actualizar' : 'Crear')}
         </button>
       </form>
+
       <h3 className="text-lg font-bold text-gray-900 mb-4">Filiales ({filialesData.length})</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filialesData.map((filial: any) => (
           <div key={filial.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
             <div className="flex items-start space-x-4 mb-4">
               {filial.image_url ? <img src={filial.image_url} alt={filial.name} className="w-16 h-16 rounded-lg object-cover" /> : <div className="w-16 h-16 rounded-lg bg-gray-200 flex items-center justify-center"><Home className="w-8 h-8 text-gray-400" /></div>}
-              <div className="flex-1"><h4 className="font-bold text-gray-900">{filial.name}</h4><p className="text-xs text-gray-500">{filial.address}</p></div>
+              <div className="flex-1">
+                <h4 className="font-bold text-gray-900">{filial.name}</h4>
+                <p className="text-xs text-gray-500">{filial.address}</p>
+                {filial.servicios?.length > 0 && <p className="text-xs text-purple-600 mt-1">{filial.servicios.join(', ')}</p>}
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <button onClick={() => handleEditFilial(filial)} className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded transition text-sm"><Edit className="w-4 h-4" />Editar</button>
