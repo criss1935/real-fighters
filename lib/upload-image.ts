@@ -6,7 +6,9 @@ export type BucketName =
   | 'events-photos'
   | 'students-photos'
   | 'filiales-images'
-  | 'classes-images';
+  | 'classes-images'
+  | 'products-images';
+         
 
 export function validateImageFile(file: File): { valid: boolean; error?: string } {
   const maxSize = 5 * 1024 * 1024; // 5MB
