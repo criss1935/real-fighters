@@ -47,12 +47,7 @@ export default function StaffPage() {
       // Mapear los datos de Supabase a la interfaz StaffMember
       const mapped: StaffMember[] = data.map((staff: any) => {
         // Determinar si es coach o staff basado en el specialty
-        const isCoach = staff.specialty && 
-          (staff.specialty.toLowerCase().includes('entrenador') ||
-           staff.specialty.toLowerCase().includes('instructor') ||
-           staff.specialty.toLowerCase().includes('coach'));
-        
-        const staffType: 'coach' | 'staff' = isCoach ? 'coach' : 'staff';
+        const staffType: 'coach' | 'staff' = staff.role === 'coach' ? 'coach' : 'staff';
 
         return {
           id: staff.id,
