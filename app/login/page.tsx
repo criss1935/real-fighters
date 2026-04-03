@@ -29,10 +29,11 @@ export default function LoginPage() {
       // Verificar que el usuario tenga rol de admin
       const { data: { user } } = await supabase.auth.getUser()
       
-      if (user?.user_metadata?.role !== 'admin' && user?.app_metadata?.role !== 'admin') {
-        await supabase.auth.signOut()
-        throw new Error('No tienes permisos de administrador')
-      }
+      const role = user?.user_metadata?.role || user?.app_metadata?.role
+if (role !== 'admin' && role !== 'receptionist') {
+  await supabase.auth.signOut()
+  throw new Error('No tienes permisos de administrador')
+}
 
       router.push('/admin')
       router.refresh()
