@@ -64,23 +64,32 @@ export default function ClassesPage() {
           <p className="text-xl md:text-2xl text-red-100 mb-8">
             Encuentra la disciplina perfecta para ti
           </p>
-          <a
-            href="https://wa.me/525535147658?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20las%20clases"
-            target="_blank"
-            rel="noopener noreferrer"
+
+          <button
+            type="button"
+            onClick={() =>
+              document
+                .getElementById('clases-grid')
+                ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }
             className="inline-block bg-white hover:bg-gray-100 text-red-600 px-8 py-4 rounded-lg font-bold text-lg transition transform hover:scale-105"
           >
             Consultar Horarios y Precios
-          </a>
+          </button>
         </div>
       </section>
 
       {/* Classes Grid */}
-      <section className="py-16">
+      <section className="py-16" id="clases-grid">
         <div className="container mx-auto px-4">
           <div className="space-y-12">
             {classes.map((clase: any, index: number) => (
-              <ClassCard key={index} clase={clase} index={index} bgColor={colorMap[clase.color] || 'bg-gray-600'} />
+              <ClassCard
+                key={index}
+                clase={clase}
+                index={index}
+                bgColor={colorMap[clase.color] || 'bg-red-600'}
+              />
             ))}
           </div>
         </div>
@@ -139,7 +148,7 @@ export default function ClassesPage() {
               rel="noopener noreferrer"
               className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-lg font-bold text-lg transition transform hover:scale-105"
             >
-              Agendar Clase 
+              Agendar Clase
             </a>
             <Link
               href="/filiales"
@@ -158,13 +167,12 @@ export default function ClassesPage() {
 function ClassCard({ clase, index, bgColor }: any) {
   const isSemiPro = clase.name?.includes('Semi Pro')
   const inscribeUrl = buildWhatsAppUrl(`Hola, quiero información sobre ${clase.name}`)
-  const trialUrl = buildWhatsAppUrl(`Quiero agendar una clase de ${clase.name}`)
 
   return (
     <div
       className={`bg-white rounded-lg shadow-lg overflow-hidden ${
         isSemiPro ? 'border-4 border-yellow-500' : ''
-      } flex flex-col md:flex ${index % 2 === 1 ? 'md:flex-row-reverse' : 'md:flex-row'}`}
+      } flex flex-col ${index % 2 === 1 ? 'md:flex-row-reverse' : 'md:flex-row'}`}
     >
       <div className="md:w-1/2 relative h-64 md:h-auto md:min-h-[400px]">
         {clase.imageUrl ? (
@@ -177,7 +185,9 @@ function ClassCard({ clase, index, bgColor }: any) {
       </div>
 
       <div className="md:w-1/2 p-8 md:p-12 flex flex-col justify-center">
-        <div className={`inline-block ${bgColor} text-white px-4 py-2 rounded-lg text-sm font-bold mb-4 self-start`}>
+        <div
+          className={`inline-block ${bgColor} text-white px-4 py-2 rounded-lg text-sm font-bold mb-4 self-start`}
+        >
           {clase.ageRange || 'Todas las edades'}
         </div>
 
@@ -198,7 +208,9 @@ function ClassCard({ clase, index, bgColor }: any) {
               </>
             )}
           </p>
-          {clase.schedule?.extra && <p className="text-gray-600 text-sm mt-1">{clase.schedule.extra}</p>}
+          {clase.schedule?.extra && (
+            <p className="text-gray-600 text-sm mt-1">{clase.schedule.extra}</p>
+          )}
         </div>
 
         <div className="mb-8">
@@ -210,7 +222,9 @@ function ClassCard({ clase, index, bgColor }: any) {
             )}
           </p>
           {clase.pricing?.inscription && (
-            <p className="text-sm text-gray-600 mt-1">Inscripción: {clase.pricing.inscription}</p>
+            <p className="text-sm text-gray-600 mt-1">
+              Inscripción: {clase.pricing.inscription}
+            </p>
           )}
         </div>
 
@@ -223,14 +237,13 @@ function ClassCard({ clase, index, bgColor }: any) {
           >
             Inscribirme
           </a>
-          <a
-            href={trialUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+
+          <Link
+            href={`/clases/${clase.slug}`}
             className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-900 text-center px-6 py-3 rounded-lg font-semibold transition"
           >
-            Clase 
-          </a>
+            Ver detalles
+          </Link>
         </div>
       </div>
     </div>
