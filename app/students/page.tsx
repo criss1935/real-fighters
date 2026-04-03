@@ -34,29 +34,29 @@ export default function StudentsPage() {
     }
     setLoading(false)
   }
+function filterStudents() {
+  let filtered = students
 
-  function filterStudents() {
-    let filtered = students
-
-    // Filtro por búsqueda (nombre)
-    if (searchTerm) {
-      filtered = filtered.filter(s => 
-        s.name.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    }
-
-    // Filtro por disciplina
-    if (selectedDiscipline !== 'all') {
-      filtered = filtered.filter(s => s.discipline === selectedDiscipline)
-    }
-
-    // Filtro por filial/gym
-    if (selectedGym !== 'all') {
-      filtered = filtered.filter(s => s.gym === selectedGym)
-    }
-
-    setFilteredStudents(filtered)
+  if (searchTerm) {
+    filtered = filtered.filter(s =>
+      s.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   }
+
+  if (selectedDiscipline !== 'all') {
+    filtered = filtered.filter(s =>
+      s.discipline?.trim().toLowerCase() === selectedDiscipline.trim().toLowerCase()
+    )
+  }
+
+  if (selectedGym !== 'all') {
+    filtered = filtered.filter(s =>
+      s.gym?.trim().toLowerCase() === selectedGym.trim().toLowerCase()
+    )
+  }
+
+  setFilteredStudents(filtered)
+}
 
   const disciplines = Array.from(new Set(students.map(s => s.discipline).filter(Boolean)))
   const gyms = Array.from(new Set(students.map(s => s.gym).filter(Boolean)))
