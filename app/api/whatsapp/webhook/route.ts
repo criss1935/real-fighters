@@ -47,7 +47,12 @@ const MAX_PROCESSED_IDS = 1_000;
 const MIN_TYPING_DELAY_MS = 1_500;
 const MAX_TYPING_DELAY_MS = 4_000;
 
-const openai = new OpenAI();
+// Lazy: instanciar en build time falla si OPENAI_API_KEY no está definida
+let openaiClient: OpenAI | null = null;
+function getOpenAI(): OpenAI {
+  openaiClient ??= new OpenAI();
+  return openaiClient;
+}
 
 type ChatMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam;
 
@@ -183,7 +188,7 @@ function cleanupStaleConversations(now: number) {
 
 async function generateReply(messages: ChatMessage[]): Promise<string> {
   try {
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAI().chat.completions.create({
       model: "gpt-4o-mini",
       max_tokens: 400,
       messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
