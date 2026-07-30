@@ -363,7 +363,9 @@ export default function AdminPage() {
         division: f.division,
         gym: f.gimnasio,
         photo_url: f.foto_url,
-        is_active: f.activo
+        is_active: f.activo,
+        nivel: f.nivel,
+        records: Array.isArray(f.records) ? f.records : []
       })))
     }
   }
@@ -382,7 +384,9 @@ export default function AdminPage() {
         division: f.division,
         gym: f.gimnasio,
         photo_url: f.foto_url,
-        is_active: f.activo
+        is_active: f.activo,
+        nivel: f.nivel,
+        records: Array.isArray(f.records) ? f.records : []
       })))
     }
   }
@@ -449,16 +453,16 @@ export default function AdminPage() {
   function handleEditFighter(fighter: any) {
     setFighterForm({
       id: fighter.id,
-      name: fighter.nombre || '',
-      nickname: fighter.apodo || '',
+      name: fighter.name || '',
+      nickname: fighter.nickname || '',
       division: fighter.division || '',
-      gym: fighter.gimnasio || '',
-      photo_url: fighter.foto_url || '',
-      is_active: fighter.activo ?? true,
+      gym: fighter.gym || '',
+      photo_url: fighter.photo_url || '',
+      is_active: fighter.is_active ?? true,
       nivel: fighter.nivel || '',
       records: Array.isArray(fighter.records) ? fighter.records : []
     })
-    setFighterImagePreview(fighter.foto_url || '')
+    setFighterImagePreview(fighter.photo_url || '')
     setFighterImageFile(null)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -496,11 +500,11 @@ export default function AdminPage() {
     try {
       const { error } = await supabase
         .from('fighters')
-        .update({ activo: !fighter.activo })
+        .update({ activo: !fighter.is_active })
         .eq('id', fighter.id)
       if (error) throw error
 
-      setMessage({ type: 'success', text: `✅ Peleador ${!fighter.activo ? 'activado' : 'desactivado'} exitosamente` })
+      setMessage({ type: 'success', text: `✅ Peleador ${!fighter.is_active ? 'activado' : 'desactivado'} exitosamente` })
       loadFighters()
       loadAllFighters()
       loadStats()
@@ -1403,18 +1407,18 @@ function AdminFightersTab({ fighterForm, setFighterForm, fighterImageFile, fight
       <h3 className="text-lg font-bold text-gray-900 mb-4">Peleadores ({allFighters.length})</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {allFighters.map((fighter: any)=> (
-          <div key={fighter.id} className={`bg-white border rounded-lg p-4 hover:shadow-md transition ${!fighter.activo ? 'border-gray-300 opacity-60' : 'border-gray-200'}`}>
+          <div key={fighter.id} className={`bg-white border rounded-lg p-4 hover:shadow-md transition ${!fighter.is_active ? 'border-gray-300 opacity-60' : 'border-gray-200'}`}>
             <div className="flex items-start space-x-4 mb-4">
-              {fighter.foto_url ? (
-                <img src={fighter.foto_url} alt={fighter.nombre} className="w-16 h-16 rounded-lg object-cover" />
+              {fighter.photo_url ? (
+                <img src={fighter.photo_url} alt={fighter.name} className="w-16 h-16 rounded-lg object-cover" />
               ) : (
                 <div className="w-16 h-16 rounded-lg bg-gray-200 flex items-center justify-center">
                   <Users className="w-8 h-8 text-gray-400" />
                 </div>
               )}
               <div className="flex-1">
-                <h4 className="font-bold text-gray-900 truncate">{fighter.nombre}</h4>
-                {fighter.apodo && <p className="text-sm text-gray-600">"{fighter.apodo}"</p>}
+                <h4 className="font-bold text-gray-900 truncate">{fighter.name}</h4>
+                {fighter.nickname && <p className="text-sm text-gray-600">"{fighter.nickname}"</p>}
                 {fighter.division && <p className="text-xs text-gray-500">{fighter.division}</p>}
                 {fighter.nivel && (
                   <span className="inline-block mt-1 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide rounded bg-red-100 text-red-700">
@@ -1438,10 +1442,10 @@ function AdminFightersTab({ fighterForm, setFighterForm, fighterImageFile, fight
                 <Edit className="w-4 h-4" />
                 Editar
               </button>
-              <button onClick={() => handleToggleFighterActive(fighter)} className={`flex-1 px-3 py-2 rounded text-sm font-semibold transition ${fighter.activo ? 'bg-gray-200 hover:bg-gray-300 text-gray-700' : 'bg-green-600 hover:bg-green-700 text-white'}`}>
-                {fighter.activo ? 'Desactivar' : 'Activar'}
+              <button onClick={() => handleToggleFighterActive(fighter)} className={`flex-1 px-3 py-2 rounded text-sm font-semibold transition ${fighter.is_active ? 'bg-gray-200 hover:bg-gray-300 text-gray-700' : 'bg-green-600 hover:bg-green-700 text-white'}`}>
+                {fighter.is_active ? 'Desactivar' : 'Activar'}
               </button>
-              <button onClick={() => handleDeleteFighter(fighter.id, fighter.foto_url)} className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded transition">
+              <button onClick={() => handleDeleteFighter(fighter.id, fighter.photo_url)} className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded transition">
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
@@ -1716,13 +1720,13 @@ function AdminFightsTab({ fightForm, setFightForm, handleCreateFight, events, fi
           <select required value={fightForm.red_fighter_id} onChange={(e) => setFightForm({...fightForm, red_fighter_id: e.target.value})} className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
             <option value="">Peleador Esquina Roja...</option>
             {fighters.map((fighter: any) => (
-              <option key={fighter.id} value={fighter.id}>{fighter.nombre}</option>
+              <option key={fighter.id} value={fighter.id}>{fighter.name}</option>
             ))}
           </select>
           <select required value={fightForm.blue_fighter_id} onChange={(e) => setFightForm({...fightForm, blue_fighter_id: e.target.value})} className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
             <option value="">Peleador Esquina Azul...</option>
             {fighters.map((fighter: any) => (
-              <option key={fighter.id} value={fighter.id}>{fighter.nombre}</option>
+              <option key={fighter.id} value={fighter.id}>{fighter.name}</option>
             ))}
           </select>
         </div>
