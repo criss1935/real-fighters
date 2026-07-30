@@ -50,6 +50,8 @@ export default function FightersPage() {
             photo_url: f.foto_perfil || f.foto_url,
             is_active: f.activo,
             record_profesional: f.record_profesional,
+            nivel: f.nivel,
+            records: Array.isArray(f.records) ? f.records : [],
             // Para compatibilidad con el código de display
             fighter_records: [{
               wins: parseInt(recordParts[0]) || 0,

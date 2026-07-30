@@ -9,6 +9,8 @@ import { uploadImage, validateImageFile, deleteImage } from '@/lib/upload-image'
 
 type TabType = 'students' | 'fighters' | 'events' | 'fights' | 'announcements' | 'filiales' | 'classes' | 'plans';
 
+const DISCIPLINAS = ['MMA', 'Muay Thai', 'Boxeo', 'BJJ', 'Kickboxing', 'Lucha'] as const;
+
 // ============ REVALIDATE HELPER ============
 async function revalidatePage(path: string) {
   try {
@@ -53,7 +55,7 @@ export default function AdminPage() {
   // ============ FIGHTERS STATE ============
   const [fighterForm, setFighterForm] = useState({ 
     id: null as number | null, name: '', nickname: '', division: '', gym: '', photo_url: '', is_active: true,
-    record_profesional: '', record_amateur: ''
+    nivel: '', records: [] as { disciplina: string; record: string }[]
   })
   const [fighterImageFile, setFighterImageFile] = useState<File | null>(null)
   const [fighterImagePreview, setFighterImagePreview] = useState<string>('')
@@ -411,8 +413,10 @@ export default function AdminPage() {
         gimnasio: fighterForm.gym || null,
         foto_url: photoUrl || null,
         activo: fighterForm.is_active,
-        record_profesional: fighterForm.record_profesional || null,
-        record_amateur: fighterForm.record_amateur || null,
+        nivel: fighterForm.nivel || null,
+        records: (fighterForm.records || []).filter(
+          (r) => r.disciplina?.trim() && r.record?.trim()
+        ),
       }
 
       if (fighterForm.id) {
@@ -430,7 +434,7 @@ export default function AdminPage() {
         setMessage({ type: 'success', text: '✅ Peleador creado exitosamente' })
       }
 
-      setFighterForm({ id: null, name: '', nickname: '', division: '', gym: '', photo_url: '', is_active: true, record_profesional: '', record_amateur: '' })
+      setFighterForm({ id: null, name: '', nickname: '', division: '', gym: '', photo_url: '', is_active: true, nivel: '', records: [] })
       setFighterImageFile(null)
       setFighterImagePreview('')
       
@@ -451,8 +455,8 @@ export default function AdminPage() {
       gym: fighter.gimnasio || '',
       photo_url: fighter.foto_url || '',
       is_active: fighter.activo ?? true,
-      record_profesional: fighter.record_profesional || '',
-      record_amateur: fighter.record_amateur || ''
+      nivel: fighter.nivel || '',
+      records: Array.isArray(fighter.records) ? fighter.records : []
     })
     setFighterImagePreview(fighter.foto_url || '')
     setFighterImageFile(null)
@@ -1327,8 +1331,63 @@ function AdminFightersTab({ fighterForm, setFighterForm, fighterImageFile, fight
           <input type="text" value={fighterForm.nickname} onChange={(e) => setFighterForm({...fighterForm, nickname: e.target.value})} placeholder="Apodo" className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" />
           <input type="text" value={fighterForm.division} onChange={(e) => setFighterForm({...fighterForm, division: e.target.value})} placeholder="División" className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" />
           <input type="text" value={fighterForm.gym} onChange={(e) => setFighterForm({...fighterForm, gym: e.target.value})} placeholder="Gimnasio" className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" />
-          <input type="text" value={fighterForm.record_profesional} onChange={(e) => setFighterForm({...fighterForm, record_profesional: e.target.value})} placeholder="Récord profesional (ej. 4-2-0)" className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" />
-          <input type="text" value={fighterForm.record_amateur} onChange={(e) => setFighterForm({...fighterForm, record_amateur: e.target.value})} placeholder="Récord amateur (ej. 7-1)" className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" />
+          <select value={fighterForm.nivel} onChange={(e) => setFighterForm({...fighterForm, nivel: e.target.value})} className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+            <option value="">Nivel: sin especificar</option>
+            <option value="profesional">Profesional</option>
+            <option value="amateur">Amateur</option>
+          </select>
+        </div>
+
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <label className="block text-sm font-medium text-gray-700 mb-3">Récord por disciplina</label>
+
+          {fighterForm.records.length === 0 && (
+            <p className="text-sm text-gray-500 mb-3">Sin récords capturados. Agrega las disciplinas que compite este peleador.</p>
+          )}
+
+          {fighterForm.records.map((r: any, i: number) => (
+            <div key={i} className="flex flex-col sm:flex-row gap-2 mb-2">
+              <select
+                value={r.disciplina}
+                onChange={(e) => {
+                  const records = [...fighterForm.records]
+                  records[i] = { ...records[i], disciplina: e.target.value }
+                  setFighterForm({ ...fighterForm, records })
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              >
+                <option value="">Disciplina...</option>
+                {DISCIPLINAS.map((d) => <option key={d} value={d}>{d}</option>)}
+              </select>
+              <input
+                type="text"
+                value={r.record}
+                onChange={(e) => {
+                  const records = [...fighterForm.records]
+                  records[i] = { ...records[i], record: e.target.value }
+                  setFighterForm({ ...fighterForm, records })
+                }}
+                placeholder="Récord (ej. 5-2-0)"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              />
+              <button
+                type="button"
+                onClick={() => setFighterForm({ ...fighterForm, records: fighterForm.records.filter((_: any, j: number) => j !== i) })}
+                className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg transition shrink-0"
+                aria-label="Quitar disciplina"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+
+          <button
+            type="button"
+            onClick={() => setFighterForm({ ...fighterForm, records: [...fighterForm.records, { disciplina: '', record: '' }] })}
+            className="mt-2 text-sm font-medium text-red-600 hover:text-red-700"
+          >
+            + Agregar disciplina
+          </button>
         </div>
 
         <label className="flex items-center space-x-3 bg-gray-50 p-4 rounded-lg">
@@ -1357,12 +1416,19 @@ function AdminFightersTab({ fighterForm, setFighterForm, fighterImageFile, fight
                 <h4 className="font-bold text-gray-900 truncate">{fighter.nombre}</h4>
                 {fighter.apodo && <p className="text-sm text-gray-600">"{fighter.apodo}"</p>}
                 {fighter.division && <p className="text-xs text-gray-500">{fighter.division}</p>}
-                {(fighter.record_profesional || fighter.record_amateur) && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    {fighter.record_profesional && <>Pro: {fighter.record_profesional}</>}
-                    {fighter.record_profesional && fighter.record_amateur && ' · '}
-                    {fighter.record_amateur && <>Am: {fighter.record_amateur}</>}
-                  </p>
+                {fighter.nivel && (
+                  <span className="inline-block mt-1 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide rounded bg-red-100 text-red-700">
+                    {fighter.nivel}
+                  </span>
+                )}
+                {Array.isArray(fighter.records) && fighter.records.length > 0 && (
+                  <ul className="mt-1 space-y-0.5">
+                    {fighter.records.map((r: any, i: number) => (
+                      <li key={i} className="text-xs text-gray-500">
+                        {r.disciplina}: <span className="font-medium text-gray-700">{r.record}</span>
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </div>
             </div>

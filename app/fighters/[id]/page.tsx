@@ -21,6 +21,8 @@ type Fighter = {
   foto_url: string | null
   record_profesional: string | null
   record_amateur: string | null
+  nivel: string | null
+  records: { disciplina: string; record: string }[] | null
   link_tapology: string | null
   entrenador: string | null
   campeonatos: string | null
@@ -243,39 +245,55 @@ export default function FighterDetailPage() {
             </p>
           )}
           
-          {/* Récords destacados */}
+          {/* Nivel + récords por disciplina */}
+          {fighter.nivel && (
+            <div className="mb-4">
+              <span className="inline-block px-3 py-1 text-xs font-bold uppercase tracking-widest rounded bg-red-600 text-white">
+                {fighter.nivel}
+              </span>
+            </div>
+          )}
+
           <div className="flex items-center space-x-6 text-white flex-wrap gap-4">
-            {/* Récord Profesional */}
-            {totalFights > 0 && (
-              <div className="bg-black bg-opacity-50 px-6 py-3 rounded-lg">
-                <div className="text-sm text-gray-300">Récord Profesional</div>
-                <div className="text-3xl font-bold">
-                  <span className="text-green-400">{record.wins}</span>
-                  {' - '}
-                  <span className="text-red-400">{record.losses}</span>
-                  {record.draws > 0 && (
-                    <>
-                      {' - '}
-                      <span className="text-gray-400">{record.draws}</span>
-                    </>
-                  )}
+            {Array.isArray(fighter.records) && fighter.records.length > 0 ? (
+              fighter.records.map((r, i) => (
+                <div key={i} className="bg-black bg-opacity-50 px-6 py-3 rounded-lg">
+                  <div className="text-sm text-gray-300">{r.disciplina}</div>
+                  <div className="text-3xl font-bold text-white">{r.record}</div>
                 </div>
+              ))
+            ) : (
+              <>
+                {/* Fallback: modelo anterior */}
                 {totalFights > 0 && (
-                  <div className="text-xs text-gray-400 mt-1">
-                    {winPercentage}% victorias
+                  <div className="bg-black bg-opacity-50 px-6 py-3 rounded-lg">
+                    <div className="text-sm text-gray-300">Récord Profesional</div>
+                    <div className="text-3xl font-bold">
+                      <span className="text-green-400">{record.wins}</span>
+                      {' - '}
+                      <span className="text-red-400">{record.losses}</span>
+                      {record.draws > 0 && (
+                        <>
+                          {' - '}
+                          <span className="text-gray-400">{record.draws}</span>
+                        </>
+                      )}
+                    </div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {winPercentage}% victorias
+                    </div>
                   </div>
                 )}
-              </div>
-            )}
-            
-            {/* Récord Amateur */}
-            {fighter.record_amateur && fighter.record_amateur !== '0' && (
-              <div className="bg-black bg-opacity-50 px-6 py-3 rounded-lg">
-                <div className="text-sm text-gray-300">Récord Amateur</div>
-                <div className="text-xl font-bold text-white">
-                  {fighter.record_amateur}
-                </div>
-              </div>
+
+                {fighter.record_amateur && fighter.record_amateur !== '0' && (
+                  <div className="bg-black bg-opacity-50 px-6 py-3 rounded-lg">
+                    <div className="text-sm text-gray-300">Récord Amateur</div>
+                    <div className="text-xl font-bold text-white">
+                      {fighter.record_amateur}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
