@@ -931,23 +931,23 @@ export default function AdminPage() {
   )
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="admin-form min-h-screen bg-gray-50 overflow-x-hidden">
       {/* Header */}
       <div className="bg-gray-900 text-white py-6">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Panel de Administración</h1>
-              <p className="text-gray-400">Gestión completa del sitio Real Fighters</p>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="min-w-0">
+              <h1 className="text-2xl md:text-3xl font-bold mb-1 md:mb-2">Panel de Administración</h1>
+              <p className="text-gray-400 text-sm md:text-base">Gestión completa del sitio Real Fighters</p>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 text-sm">
-                <UserCircle className="w-5 h-5" />
-                <span>{user?.email}</span>
+            <div className="flex items-center justify-between gap-3 md:justify-end md:gap-4">
+              <div className="flex items-center gap-2 text-sm min-w-0">
+                <UserCircle className="w-5 h-5 shrink-0" />
+                <span className="truncate">{user?.email}</span>
               </div>
               <button
                 onClick={handleLogout}
-                className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition"
+                className="flex items-center gap-2 bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition shrink-0"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Salir</span>
