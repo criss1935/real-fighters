@@ -52,7 +52,8 @@ export default function AdminPage() {
 
   // ============ FIGHTERS STATE ============
   const [fighterForm, setFighterForm] = useState({ 
-    id: null as number | null, name: '', nickname: '', division: '', gym: '', photo_url: '', is_active: true
+    id: null as number | null, name: '', nickname: '', division: '', gym: '', photo_url: '', is_active: true,
+    record_profesional: '', record_amateur: ''
   })
   const [fighterImageFile, setFighterImageFile] = useState<File | null>(null)
   const [fighterImagePreview, setFighterImagePreview] = useState<string>('')
@@ -410,6 +411,8 @@ export default function AdminPage() {
         gimnasio: fighterForm.gym || null,
         foto_url: photoUrl || null,
         activo: fighterForm.is_active,
+        record_profesional: fighterForm.record_profesional || null,
+        record_amateur: fighterForm.record_amateur || null,
       }
 
       if (fighterForm.id) {
@@ -427,7 +430,7 @@ export default function AdminPage() {
         setMessage({ type: 'success', text: '✅ Peleador creado exitosamente' })
       }
 
-      setFighterForm({ id: null, name: '', nickname: '', division: '', gym: '', photo_url: '', is_active: true })
+      setFighterForm({ id: null, name: '', nickname: '', division: '', gym: '', photo_url: '', is_active: true, record_profesional: '', record_amateur: '' })
       setFighterImageFile(null)
       setFighterImagePreview('')
       
@@ -442,14 +445,16 @@ export default function AdminPage() {
   function handleEditFighter(fighter: any) {
     setFighterForm({
       id: fighter.id,
-      name: fighter.name,
-      nickname: fighter.nickname || '',
+      name: fighter.nombre || '',
+      nickname: fighter.apodo || '',
       division: fighter.division || '',
-      gym: fighter.gym || '',
-      photo_url: fighter.photo_url || '',
-      is_active: fighter.is_active
+      gym: fighter.gimnasio || '',
+      photo_url: fighter.foto_url || '',
+      is_active: fighter.activo ?? true,
+      record_profesional: fighter.record_profesional || '',
+      record_amateur: fighter.record_amateur || ''
     })
-    setFighterImagePreview(fighter.photo_url || '')
+    setFighterImagePreview(fighter.foto_url || '')
     setFighterImageFile(null)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -487,11 +492,11 @@ export default function AdminPage() {
     try {
       const { error } = await supabase
         .from('fighters')
-        .update({ activo: !fighter.is_active })
+        .update({ activo: !fighter.activo })
         .eq('id', fighter.id)
       if (error) throw error
 
-      setMessage({ type: 'success', text: `✅ Peleador ${!fighter.is_active ? 'activado' : 'desactivado'} exitosamente` })
+      setMessage({ type: 'success', text: `✅ Peleador ${!fighter.activo ? 'activado' : 'desactivado'} exitosamente` })
       loadFighters()
       loadAllFighters()
       loadStats()
@@ -1322,6 +1327,8 @@ function AdminFightersTab({ fighterForm, setFighterForm, fighterImageFile, fight
           <input type="text" value={fighterForm.nickname} onChange={(e) => setFighterForm({...fighterForm, nickname: e.target.value})} placeholder="Apodo" className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" />
           <input type="text" value={fighterForm.division} onChange={(e) => setFighterForm({...fighterForm, division: e.target.value})} placeholder="División" className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" />
           <input type="text" value={fighterForm.gym} onChange={(e) => setFighterForm({...fighterForm, gym: e.target.value})} placeholder="Gimnasio" className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" />
+          <input type="text" value={fighterForm.record_profesional} onChange={(e) => setFighterForm({...fighterForm, record_profesional: e.target.value})} placeholder="Récord profesional (ej. 4-2-0)" className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" />
+          <input type="text" value={fighterForm.record_amateur} onChange={(e) => setFighterForm({...fighterForm, record_amateur: e.target.value})} placeholder="Récord amateur (ej. 7-1)" className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" />
         </div>
 
         <label className="flex items-center space-x-3 bg-gray-50 p-4 rounded-lg">
@@ -1337,19 +1344,26 @@ function AdminFightersTab({ fighterForm, setFighterForm, fighterImageFile, fight
       <h3 className="text-lg font-bold text-gray-900 mb-4">Peleadores ({allFighters.length})</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {allFighters.map((fighter: any)=> (
-          <div key={fighter.id} className={`bg-white border rounded-lg p-4 hover:shadow-md transition ${!fighter.is_active ? 'border-gray-300 opacity-60' : 'border-gray-200'}`}>
+          <div key={fighter.id} className={`bg-white border rounded-lg p-4 hover:shadow-md transition ${!fighter.activo ? 'border-gray-300 opacity-60' : 'border-gray-200'}`}>
             <div className="flex items-start space-x-4 mb-4">
-              {fighter.photo_url ? (
-                <img src={fighter.photo_url} alt={fighter.name} className="w-16 h-16 rounded-lg object-cover" />
+              {fighter.foto_url ? (
+                <img src={fighter.foto_url} alt={fighter.nombre} className="w-16 h-16 rounded-lg object-cover" />
               ) : (
                 <div className="w-16 h-16 rounded-lg bg-gray-200 flex items-center justify-center">
                   <Users className="w-8 h-8 text-gray-400" />
                 </div>
               )}
               <div className="flex-1">
-                <h4 className="font-bold text-gray-900 truncate">{fighter.name}</h4>
-                {fighter.nickname && <p className="text-sm text-gray-600">"{fighter.nickname}"</p>}
+                <h4 className="font-bold text-gray-900 truncate">{fighter.nombre}</h4>
+                {fighter.apodo && <p className="text-sm text-gray-600">"{fighter.apodo}"</p>}
                 {fighter.division && <p className="text-xs text-gray-500">{fighter.division}</p>}
+                {(fighter.record_profesional || fighter.record_amateur) && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {fighter.record_profesional && <>Pro: {fighter.record_profesional}</>}
+                    {fighter.record_profesional && fighter.record_amateur && ' · '}
+                    {fighter.record_amateur && <>Am: {fighter.record_amateur}</>}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -1358,10 +1372,10 @@ function AdminFightersTab({ fighterForm, setFighterForm, fighterImageFile, fight
                 <Edit className="w-4 h-4" />
                 Editar
               </button>
-              <button onClick={() => handleToggleFighterActive(fighter)} className={`flex-1 px-3 py-2 rounded text-sm font-semibold transition ${fighter.is_active ? 'bg-gray-200 hover:bg-gray-300 text-gray-700' : 'bg-green-600 hover:bg-green-700 text-white'}`}>
-                {fighter.is_active ? 'Desactivar' : 'Activar'}
+              <button onClick={() => handleToggleFighterActive(fighter)} className={`flex-1 px-3 py-2 rounded text-sm font-semibold transition ${fighter.activo ? 'bg-gray-200 hover:bg-gray-300 text-gray-700' : 'bg-green-600 hover:bg-green-700 text-white'}`}>
+                {fighter.activo ? 'Desactivar' : 'Activar'}
               </button>
-              <button onClick={() => handleDeleteFighter(fighter.id, fighter.photo_url)} className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded transition">
+              <button onClick={() => handleDeleteFighter(fighter.id, fighter.foto_url)} className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded transition">
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
@@ -1636,13 +1650,13 @@ function AdminFightsTab({ fightForm, setFightForm, handleCreateFight, events, fi
           <select required value={fightForm.red_fighter_id} onChange={(e) => setFightForm({...fightForm, red_fighter_id: e.target.value})} className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
             <option value="">Peleador Esquina Roja...</option>
             {fighters.map((fighter: any) => (
-              <option key={fighter.id} value={fighter.id}>{fighter.name}</option>
+              <option key={fighter.id} value={fighter.id}>{fighter.nombre}</option>
             ))}
           </select>
           <select required value={fightForm.blue_fighter_id} onChange={(e) => setFightForm({...fightForm, blue_fighter_id: e.target.value})} className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
             <option value="">Peleador Esquina Azul...</option>
             {fighters.map((fighter: any) => (
-              <option key={fighter.id} value={fighter.id}>{fighter.name}</option>
+              <option key={fighter.id} value={fighter.id}>{fighter.nombre}</option>
             ))}
           </select>
         </div>
