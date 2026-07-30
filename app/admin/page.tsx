@@ -357,14 +357,12 @@ export default function AdminPage() {
     
     if (data) {
       setFighters(data.map((f: any) => ({
-        id: f.id,
+        ...f,
         name: f.nombre,
         nickname: f.apodo,
-        division: f.division,
         gym: f.gimnasio,
         photo_url: f.foto_url,
         is_active: f.activo,
-        nivel: f.nivel,
         records: Array.isArray(f.records) ? f.records : []
       })))
     }
@@ -378,14 +376,12 @@ export default function AdminPage() {
     
     if (data) {
       setAllFighters(data.map((f: any) => ({
-        id: f.id,
+        ...f,
         name: f.nombre,
         nickname: f.apodo,
-        division: f.division,
         gym: f.gimnasio,
         photo_url: f.foto_url,
         is_active: f.activo,
-        nivel: f.nivel,
         records: Array.isArray(f.records) ? f.records : []
       })))
     }

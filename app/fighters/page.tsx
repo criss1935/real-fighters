@@ -41,7 +41,7 @@ export default function FightersPage() {
           // Parsear record_profesional (ej: "1-0", "4-2-0", "25-14")
           const recordParts = (f.record_profesional || '0-0-0').split('-')
           return {
-            id: f.id,
+            ...f,
             name: f.nombre,
             nickname: f.apodo,
             division: f.division || f.categoria_peso,
@@ -49,8 +49,6 @@ export default function FightersPage() {
             gym: f.gimnasio || f.academia,
             photo_url: f.foto_perfil || f.foto_url,
             is_active: f.activo,
-            record_profesional: f.record_profesional,
-            nivel: f.nivel,
             records: Array.isArray(f.records) ? f.records : [],
             // Para compatibilidad con el código de display
             fighter_records: [{
