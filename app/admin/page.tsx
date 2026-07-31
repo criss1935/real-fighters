@@ -11,6 +11,17 @@ type TabType = 'students' | 'fighters' | 'events' | 'fights' | 'announcements' |
 
 const DISCIPLINAS = ['MMA', 'Muay Thai', 'Boxeo', 'BJJ', 'Kickboxing', 'Lucha'] as const;
 
+function calcularEdad(fechaNacimiento?: string | null): number | null {
+  if (!fechaNacimiento) return null
+  const nacimiento = new Date(fechaNacimiento + 'T00:00:00')
+  if (isNaN(nacimiento.getTime())) return null
+  const hoy = new Date()
+  let edad = hoy.getFullYear() - nacimiento.getFullYear()
+  const mes = hoy.getMonth() - nacimiento.getMonth()
+  if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) edad--
+  return edad >= 0 && edad < 120 ? edad : null
+}
+
 // ============ REVALIDATE HELPER ============
 async function revalidatePage(path: string) {
   try {
@@ -55,7 +66,8 @@ export default function AdminPage() {
   // ============ FIGHTERS STATE ============
   const [fighterForm, setFighterForm] = useState({ 
     id: null as number | null, name: '', nickname: '', division: '', gym: '', photo_url: '', is_active: true,
-    nivel: '', records: [] as { disciplina: string; record: string }[]
+    nivel: '', records: [] as { disciplina: string; record: string }[],
+    fecha_nacimiento: '', link_tapology: ''
   })
   const [fighterImageFile, setFighterImageFile] = useState<File | null>(null)
   const [fighterImagePreview, setFighterImagePreview] = useState<string>('')
@@ -417,6 +429,8 @@ export default function AdminPage() {
         records: (fighterForm.records || []).filter(
           (r) => r.disciplina?.trim() && r.record?.trim()
         ),
+        fecha_nacimiento: fighterForm.fecha_nacimiento || null,
+        link_tapology: fighterForm.link_tapology?.trim() || null,
       }
 
       if (fighterForm.id) {
@@ -434,7 +448,7 @@ export default function AdminPage() {
         setMessage({ type: 'success', text: '✅ Peleador creado exitosamente' })
       }
 
-      setFighterForm({ id: null, name: '', nickname: '', division: '', gym: '', photo_url: '', is_active: true, nivel: '', records: [] })
+      setFighterForm({ id: null, name: '', nickname: '', division: '', gym: '', photo_url: '', is_active: true, nivel: '', records: [], fecha_nacimiento: '', link_tapology: '' })
       setFighterImageFile(null)
       setFighterImagePreview('')
       
@@ -456,7 +470,9 @@ export default function AdminPage() {
       photo_url: fighter.photo_url || '',
       is_active: fighter.is_active ?? true,
       nivel: fighter.nivel || '',
-      records: Array.isArray(fighter.records) ? fighter.records : []
+      records: Array.isArray(fighter.records) ? fighter.records : [],
+      fecha_nacimiento: fighter.fecha_nacimiento || '',
+      link_tapology: fighter.link_tapology || ''
     })
     setFighterImagePreview(fighter.photo_url || '')
     setFighterImageFile(null)
@@ -1336,6 +1352,28 @@ function AdminFightersTab({ fighterForm, setFighterForm, fighterImageFile, fight
             <option value="profesional">Profesional</option>
             <option value="amateur">Amateur</option>
           </select>
+          <div>
+            <input
+              type="date"
+              value={fighterForm.fecha_nacimiento}
+              onChange={(e) => setFighterForm({...fighterForm, fecha_nacimiento: e.target.value})}
+              max={new Date().toISOString().split('T')[0]}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Fecha de nacimiento
+              {calcularEdad(fighterForm.fecha_nacimiento) !== null && (
+                <span className="font-semibold text-gray-700"> · {calcularEdad(fighterForm.fecha_nacimiento)} años</span>
+              )}
+            </p>
+          </div>
+          <input
+            type="url"
+            value={fighterForm.link_tapology}
+            onChange={(e) => setFighterForm({...fighterForm, link_tapology: e.target.value})}
+            placeholder="Link de Tapology (https://...)"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+          />
         </div>
 
         <div className="bg-gray-50 p-4 rounded-lg">
@@ -1416,6 +1454,19 @@ function AdminFightersTab({ fighterForm, setFighterForm, fighterImageFile, fight
                 <h4 className="font-bold text-gray-900 truncate">{fighter.name}</h4>
                 {fighter.nickname && <p className="text-sm text-gray-600">"{fighter.nickname}"</p>}
                 {fighter.division && <p className="text-xs text-gray-500">{fighter.division}</p>}
+                {calcularEdad(fighter.fecha_nacimiento) !== null && (
+                  <p className="text-xs text-gray-500">{calcularEdad(fighter.fecha_nacimiento)} años</p>
+                )}
+                {fighter.link_tapology && (
+                  <a
+                    href={fighter.link_tapology}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-red-600 hover:text-red-700 underline"
+                  >
+                    Tapology
+                  </a>
+                )}
                 {fighter.nivel && (
                   <span className="inline-block mt-1 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide rounded bg-red-100 text-red-700">
                     {fighter.nivel}

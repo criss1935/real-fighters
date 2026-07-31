@@ -7,6 +7,24 @@ import Image from 'next/image'
 import { ArrowLeft, Trophy, Target, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 
+function calcularEdad(fechaNacimiento?: string | null): number | null {
+  if (!fechaNacimiento) return null
+  const nacimiento = new Date(fechaNacimiento + 'T00:00:00')
+  if (isNaN(nacimiento.getTime())) return null
+  const hoy = new Date()
+  let edad = hoy.getFullYear() - nacimiento.getFullYear()
+  const mes = hoy.getMonth() - nacimiento.getMonth()
+  if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) edad--
+  return edad >= 0 && edad < 120 ? edad : null
+}
+
+function formatearFecha(fecha?: string | null): string {
+  if (!fecha) return ''
+  const d = new Date(fecha + 'T00:00:00')
+  if (isNaN(d.getTime())) return ''
+  return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
 type Fighter = {
   id: number
   nombre: string
@@ -24,6 +42,7 @@ type Fighter = {
   nivel: string | null
   records: { disciplina: string; record: string }[] | null
   link_tapology: string | null
+  fecha_nacimiento: string | null
   entrenador: string | null
   campeonatos: string | null
 }
@@ -346,6 +365,18 @@ export default function FighterDetailPage() {
                   </div>
                 )}
                 
+                {calcularEdad(fighter.fecha_nacimiento) !== null && (
+                  <div>
+                    <div className="text-sm text-gray-600">Edad</div>
+                    <div className="text-lg font-semibold text-gray-900">
+                      {calcularEdad(fighter.fecha_nacimiento)} años
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {formatearFecha(fighter.fecha_nacimiento)}
+                    </div>
+                  </div>
+                )}
+
                 {fighter.altura_cm && (
                   <div>
                     <div className="text-sm text-gray-600">Altura</div>
