@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Calendar, Trophy, LogOut, UserCircle, Newspaper, Eye, Trash2, Edit, X, Upload, Home, BookOpen, DollarSign } from 'lucide-react';
+import { Users, Calendar, Trophy, LogOut, UserCircle, Newspaper, Eye, Trash2, Edit, X, Upload, Home, BookOpen, DollarSign, ShoppingBag } from 'lucide-react';
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import RichTextEditor from '@/components/RichTextEditor';
 import { uploadImage, validateImageFile, deleteImage } from '@/lib/upload-image';
 
-type TabType = 'students' | 'fighters' | 'events' | 'fights' | 'announcements' | 'filiales' | 'classes' | 'plans';
+type TabType = 'students' | 'fighters' | 'events' | 'fights' | 'announcements' | 'filiales' | 'classes' | 'plans' | 'tienda';
+
+const CATEGORIAS_PRODUCTO = ['Equipo', 'Ropa', 'Protección', 'Uniformes', 'Accesorios', 'Suplementos'] as const;
 
 const DISCIPLINAS = ['MMA', 'Muay Thai', 'Boxeo', 'BJJ', 'Kickboxing', 'Lucha'] as const;
 
@@ -75,6 +77,16 @@ export default function AdminPage() {
   const [fighters, setFighters] = useState<any[]>([])
   const [allFighters, setAllFighters] = useState<any[]>([])
 
+  // ============ TIENDA STATE ============
+  const [productForm, setProductForm] = useState({
+    id: null as number | null,
+    name: '', category: '', price: '', description: '', image_url: '', stock: true, orden: ''
+  })
+  const [productImageFile, setProductImageFile] = useState<File | null>(null)
+  const [productImagePreview, setProductImagePreview] = useState<string>('')
+  const [uploadingProductImage, setUploadingProductImage] = useState(false)
+  const [products, setProducts] = useState<any[]>([])
+
   // ============ FILIALES STATE ============
   const [filialesData, setFilialesData] = useState<any[]>([])
   const [filialForm, setFilialForm] = useState({
@@ -140,6 +152,7 @@ export default function AdminPage() {
       loadEvents()
       loadAnnouncements()
       loadConfigData()
+      loadProducts()
     }
   }, [user])
 
@@ -520,6 +533,147 @@ export default function AdminPage() {
       loadFighters()
       loadAllFighters()
       loadStats()
+    } catch (error: any) {
+      setMessage({ type: 'error', text: `❌ Error: ${error.message}` })
+    }
+  }
+
+  // ============ TIENDA FUNCTIONS ============
+  function handleProductImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const validation = validateImageFile(file)
+    if (!validation.valid) {
+      setMessage({ type: 'error', text: `❌ ${validation.error}` })
+      return
+    }
+    setProductImageFile(file)
+    setProductImagePreview(URL.createObjectURL(file))
+  }
+
+  async function loadProducts() {
+    const { data } = await supabase
+      .from('products')
+      .select('*')
+      .order('orden')
+      .order('name')
+
+    if (data) setProducts(data)
+  }
+
+  async function handleCreateOrUpdateProduct(e: React.FormEvent) {
+    e.preventDefault()
+    setMessage(null)
+
+    if (!productForm.name.trim()) {
+      setMessage({ type: 'error', text: '❌ El nombre del producto es obligatorio' })
+      return
+    }
+    const precio = parseFloat(productForm.price)
+    if (isNaN(precio) || precio < 0) {
+      setMessage({ type: 'error', text: '❌ Ingresa un precio válido' })
+      return
+    }
+
+    try {
+      let imageUrl = productForm.image_url
+
+      if (productImageFile) {
+        setUploadingProductImage(true)
+        const uploadedUrl = await uploadImage(productImageFile, 'products-images')
+        setUploadingProductImage(false)
+        if (!uploadedUrl) {
+          setMessage({ type: 'error', text: '❌ No se pudo subir la imagen' })
+          return
+        }
+        imageUrl = uploadedUrl
+      }
+
+      const productData = {
+        name: productForm.name.trim(),
+        category: productForm.category || null,
+        price: precio,
+        description: productForm.description?.trim() || null,
+        image_url: imageUrl || null,
+        stock: productForm.stock,
+        orden: parseInt(productForm.orden) || 0,
+        updated_at: new Date().toISOString(),
+      }
+
+      if (productForm.id) {
+        const { error } = await supabase.from('products').update(productData).eq('id', productForm.id)
+        if (error) throw error
+        setMessage({ type: 'success', text: '✅ Producto actualizado exitosamente' })
+      } else {
+        const { error } = await supabase.from('products').insert([productData])
+        if (error) throw error
+        setMessage({ type: 'success', text: '✅ Producto creado exitosamente' })
+      }
+
+      await revalidatePage('/tienda')
+
+      setProductForm({ id: null, name: '', category: '', price: '', description: '', image_url: '', stock: true, orden: '' })
+      setProductImageFile(null)
+      setProductImagePreview('')
+      loadProducts()
+    } catch (error: any) {
+      setUploadingProductImage(false)
+      setMessage({ type: 'error', text: `❌ Error: ${error.message}` })
+    }
+  }
+
+  function handleEditProduct(product: any) {
+    setProductForm({
+      id: product.id,
+      name: product.name || '',
+      category: product.category || '',
+      price: product.price?.toString() || '',
+      description: product.description || '',
+      image_url: product.image_url || '',
+      stock: product.stock ?? true,
+      orden: product.orden?.toString() || ''
+    })
+    setProductImagePreview(product.image_url || '')
+    setProductImageFile(null)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  async function handleDeleteProduct(id: number, name: string, imageUrl: string | null) {
+    if (!confirm(`¿Eliminar el producto "${name}"?\n\nEsta acción no se puede deshacer.`)) return
+
+    try {
+      if (imageUrl) {
+        try {
+          await deleteImage(imageUrl, 'products-images')
+        } catch (e) {
+          console.log('No se pudo eliminar la imagen')
+        }
+      }
+
+      const { error } = await supabase.from('products').delete().eq('id', id)
+      if (error) throw error
+
+      await revalidatePage('/tienda')
+
+      setMessage({ type: 'success', text: '✅ Producto eliminado exitosamente' })
+      loadProducts()
+    } catch (error: any) {
+      setMessage({ type: 'error', text: `❌ Error: ${error.message}` })
+    }
+  }
+
+  async function handleToggleProductStock(product: any) {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ stock: !product.stock, updated_at: new Date().toISOString() })
+        .eq('id', product.id)
+      if (error) throw error
+
+      await revalidatePage('/tienda')
+
+      setMessage({ type: 'success', text: `✅ Producto marcado como ${!product.stock ? 'disponible' : 'agotado'}` })
+      loadProducts()
     } catch (error: any) {
       setMessage({ type: 'error', text: `❌ Error: ${error.message}` })
     }
@@ -1038,6 +1192,7 @@ export default function AdminPage() {
               <TabButton id="filiales" label="Filiales" icon={Home} />
               <TabButton id="classes" label="Clases" icon={BookOpen} />
               <TabButton id="plans" label="Planes" icon={DollarSign} />
+              <TabButton id="tienda" label="Tienda" icon={ShoppingBag} />
               <TabButton id="events" label="Eventos" icon={Calendar} />
               <TabButton id="fights" label="Combates" icon={Trophy} />
               <TabButton id="announcements" label="Anuncios" icon={Newspaper} />
@@ -1144,6 +1299,177 @@ export default function AdminPage() {
                 events={events}
                 fighters={fighters}
               />
+            )}
+
+            {/* TIENDA */}
+            {activeTab === 'tienda' && (
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">
+                  {productForm.id ? 'Editar Producto' : 'Nuevo Producto'}
+                </h3>
+
+                <form onSubmit={handleCreateOrUpdateProduct} className="space-y-4 mb-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input
+                      type="text"
+                      value={productForm.name}
+                      onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
+                      placeholder="Nombre del producto *"
+                      required
+                      className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    />
+                    <select
+                      value={productForm.category}
+                      onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
+                      className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    >
+                      <option value="">Categoría...</option>
+                      {CATEGORIAS_PRODUCTO.map((c) => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={productForm.price}
+                      onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
+                      placeholder="Precio en MXN *"
+                      required
+                      className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    />
+                    <input
+                      type="number"
+                      value={productForm.orden}
+                      onChange={(e) => setProductForm({ ...productForm, orden: e.target.value })}
+                      placeholder="Orden (0 = primero)"
+                      className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <textarea
+                    value={productForm.description}
+                    onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
+                    placeholder="Descripción del producto"
+                    rows={3}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  />
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Foto del producto</label>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={handleProductImageSelect}
+                      className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">JPG, PNG o WebP. Máximo 5MB.</p>
+                    {productImagePreview && (
+                      <img src={productImagePreview} alt="Vista previa" className="mt-3 w-32 h-32 object-cover rounded-lg border border-gray-200" />
+                    )}
+                  </div>
+
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={productForm.stock}
+                      onChange={(e) => setProductForm({ ...productForm, stock: e.target.checked })}
+                      className="w-4 h-4 text-red-600 rounded focus:ring-red-500"
+                    />
+                    <span className="text-sm text-gray-700">Disponible en tienda</span>
+                  </label>
+
+                  <div className="flex gap-3">
+                    <button
+                      type="submit"
+                      disabled={uploadingProductImage}
+                      className="bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-semibold px-6 py-2 rounded-lg transition"
+                    >
+                      {uploadingProductImage ? 'Subiendo imagen...' : productForm.id ? 'Actualizar Producto' : 'Crear Producto'}
+                    </button>
+                    {productForm.id && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProductForm({ id: null, name: '', category: '', price: '', description: '', image_url: '', stock: true, orden: '' })
+                          setProductImageFile(null)
+                          setProductImagePreview('')
+                        }}
+                        className="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-lg transition"
+                      >
+                        Cancelar
+                      </button>
+                    )}
+                  </div>
+                </form>
+
+                <h3 className="text-xl font-bold text-gray-900 mb-4">
+                  Productos ({products.length})
+                </h3>
+
+                {products.length === 0 ? (
+                  <p className="text-gray-500">Aún no hay productos. Crea el primero arriba.</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {products.map((product: any) => (
+                      <div
+                        key={product.id}
+                        className={`bg-white border rounded-lg p-4 hover:shadow-md transition ${!product.stock ? 'border-gray-300 opacity-60' : 'border-gray-200'}`}
+                      >
+                        <div className="flex items-start gap-4 mb-4">
+                          {product.image_url ? (
+                            <img src={product.image_url} alt={product.name} className="w-16 h-16 rounded-lg object-cover shrink-0" />
+                          ) : (
+                            <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+                              <ShoppingBag className="w-6 h-6 text-gray-400" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-bold text-gray-900 truncate">{product.name}</h4>
+                            <p className="text-lg font-semibold text-red-600">
+                              ${Number(product.price).toLocaleString('es-MX')} MXN
+                            </p>
+                            {product.category && (
+                              <span className="inline-block mt-1 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide rounded bg-gray-100 text-gray-700">
+                                {product.category}
+                              </span>
+                            )}
+                            {!product.stock && (
+                              <span className="inline-block mt-1 ml-1 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide rounded bg-red-100 text-red-700">
+                                Agotado
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {product.description && (
+                          <p className="text-xs text-gray-600 mb-3 line-clamp-2">{product.description}</p>
+                        )}
+
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEditProduct(product)}
+                            className="flex-1 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded text-sm font-semibold transition"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            onClick={() => handleToggleProductStock(product)}
+                            className={`flex-1 px-3 py-2 rounded text-sm font-semibold transition ${product.stock ? 'bg-gray-200 hover:bg-gray-300 text-gray-700' : 'bg-green-600 hover:bg-green-700 text-white'}`}
+                          >
+                            {product.stock ? 'Marcar agotado' : 'Marcar disponible'}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProduct(product.id, product.name, product.image_url)}
+                            className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded transition"
+                            aria-label="Eliminar producto"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
 
             {/* ANNOUNCEMENTS */}

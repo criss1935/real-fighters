@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { ShoppingCart, Plus, Minus, Trash2, X } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 interface Product {
   id: number;
@@ -18,104 +19,38 @@ interface CartItem extends Product {
   quantity: number;
 }
 
-// Productos dummy
-const products: Product[] = [
-  {
-    id: 1,
-    name: "Guantes de Boxeo Real Fighters",
-    category: "Equipo",
-    price: 1200,
-    image: "/tienda/guantes-box.jpg",
-    description: "Guantes profesionales de alta calidad, ideal para entrenamientos intensos",
-    stock: true
-  },
-  {
-    id: 2,
-    name: "Playera Real Fighters",
-    category: "Ropa",
-    price: 350,
-    image: "/tienda/playera.jpg",
-    description: "Playera oficial de algodón premium con logo bordado",
-    stock: true
-  },
-  {
-    id: 3,
-    name: "Short de Muay Thai",
-    category: "Ropa",
-    price: 450,
-    image: "/tienda/short-muay.jpg",
-    description: "Short tradicional de Muay Thai con diseño exclusivo",
-    stock: true
-  },
-  {
-    id: 4,
-    name: "Vendas para Manos",
-    category: "Equipo",
-    price: 150,
-    image: "/tienda/vendas.jpg",
-    description: "Vendas elásticas de 4 metros, protección profesional",
-    stock: true
-  },
-  {
-    id: 5,
-    name: "Protector Bucal",
-    category: "Protección",
-    price: 200,
-    image: "/tienda/bucal.jpg",
-    description: "Protector bucal moldeable, máxima protección",
-    stock: true
-  },
-  {
-    id: 6,
-    name: "Concha Protectora",
-    category: "Protección",
-    price: 300,
-    image: "/tienda/concha.jpg",
-    description: "Concha anatómica profesional para hombres",
-    stock: true
-  },
-  {
-    id: 7,
-    name: "Espinilleras",
-    category: "Protección",
-    price: 800,
-    image: "/tienda/espinilleras.jpg",
-    description: "Espinilleras acolchadas para Muay Thai y Kickboxing",
-    stock: true
-  },
-  {
-    id: 8,
-    name: "Gi de BJJ Real Fighters",
-    category: "Uniformes",
-    price: 1800,
-    image: "/tienda/gi-bjj.jpg",
-    description: "Kimono profesional de Brazilian Jiu-Jitsu, talla ajustable",
-    stock: true
-  },
-  {
-    id: 9,
-    name: "Sudadera Real Fighters",
-    category: "Ropa",
-    price: 650,
-    image: "/tienda/sudadera.jpg",
-    description: "Sudadera con capucha, diseño exclusivo Real Fighters",
-    stock: true
-  },
-  {
-    id: 10,
-    name: "Bolsa Deportiva",
-    category: "Accesorios",
-    price: 550,
-    image: "/tienda/bolsa.jpg",
-    description: "Bolsa espaciosa con compartimentos, ideal para tu equipo",
-    stock: true
-  }
-];
-
 export default function TiendaPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [showCart, setShowCart] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadProducts() {
+      const { data } = await supabase
+        .from('products')
+        .select('*')
+        .order('orden')
+        .order('name');
+
+      if (data) {
+        setProducts(
+          data.map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            category: p.category || 'Sin categoría',
+            price: Number(p.price),
+            image: p.image_url || '',
+            description: p.description || '',
+            stock: p.stock ?? true,
+          }))
+        );
+      }
+      setLoading(false);
+    }
+    loadProducts();
+  }, []);
 
   const categories = ['Todos', ...Array.from(new Set(products.map(p => p.category)))];
 
@@ -231,12 +166,19 @@ export default function TiendaPage() {
                   {cart.map(item => (
                     <div key={item.id} className="flex gap-4 border-b pb-4">
                       <div className="w-20 h-20 bg-gray-200 rounded flex-shrink-0 relative">
-                        <Image
-                          src={item.image}
-                          alt={item.name}
-                          fill
-                          className="object-cover rounded"
-                        />
+                        {item.image ? (
+                          <Image
+                            src={item.image}
+                            alt={item.name}
+                            fill
+                            className="object-cover rounded"
+                            unoptimized
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <ShoppingCart className="w-6 h-6 text-gray-400" />
+                          </div>
+                        )}
                       </div>
                       <div className="flex-1">
                         <h3 className="font-semibold text-gray-900 mb-1">{item.name}</h3>
@@ -317,6 +259,13 @@ export default function TiendaPage() {
       {/* Productos */}
       <section className="py-16">
         <div className="container mx-auto px-4">
+          {loading ? (
+            <p className="text-center text-gray-500 py-12">Cargando productos...</p>
+          ) : filteredProducts.length === 0 ? (
+            <p className="text-center text-gray-500 py-12">
+              No hay productos disponibles en esta categoría.
+            </p>
+          ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map(product => (
               <div
@@ -324,12 +273,19 @@ export default function TiendaPage() {
                 className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition group"
               >
                 <div className="h-64 bg-gray-200 relative overflow-hidden">
-                  <Image
-                    src={product.image}
-                    alt={product.name}
-                    fill
-                    className="object-cover group-hover:scale-105 transition duration-300"
-                  />
+                  {product.image ? (
+                    <Image
+                      src={product.image}
+                      alt={product.name}
+                      fill
+                      className="object-cover group-hover:scale-105 transition duration-300"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                      <ShoppingCart className="w-12 h-12 text-gray-300" />
+                    </div>
+                  )}
                   {!product.stock && (
                     <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center">
                       <span className="bg-red-600 text-white px-4 py-2 rounded-lg font-bold">
@@ -370,6 +326,7 @@ export default function TiendaPage() {
               </div>
             ))}
           </div>
+          )}
         </div>
       </section>
 
