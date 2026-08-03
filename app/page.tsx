@@ -11,15 +11,12 @@ export default function HomePage() {
         <div className="absolute inset-0">
           <Image
             src="/hero-mma.jpg"
-            alt="MMA Training"
+            alt="Real Fighters México"
             fill
-            className="object-cover opacity-30"
+            className="object-cover object-left md:object-center opacity-50"
             priority
-            onError={(e) => {
-              e.currentTarget.style.display = 'none'
-            }}
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/45 to-black/90"></div>
         </div>
 
         <div className="relative z-10 text-center px-4 max-w-5xl mx-auto">
