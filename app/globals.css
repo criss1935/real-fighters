@@ -22,11 +22,25 @@ h1, h2, h3, h4 {
   letter-spacing: 0.05em;
 }
 
-/* FIX GLOBAL: el body tiene color blanco (tema oscuro), los inputs sobre
-   fondos claros (login, formularios) deben forzar texto oscuro */
-input.bg-white,
-textarea.bg-white,
-select.bg-white {
+/* FIX GLOBAL: el body tiene color blanco (tema oscuro del sitio), asi que
+   TODO control de formulario debe forzar texto oscuro sobre fondo claro.
+   Va con selectores de elemento (especificidad 0,0,1) para que cualquier
+   clase de Tailwind lo pueda sobreescribir si algun dia se necesita. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
+select,
+textarea {
+  background-color: #ffffff;
+  color: #111827;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #9ca3af;
+  opacity: 1;
+}
+
+select option {
+  background-color: #ffffff;
   color: #111827;
 }
 
