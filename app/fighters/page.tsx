@@ -268,7 +268,7 @@ export default function FightersPage() {
                         src={fighter.photo_url}
                         alt={fighter.name}
                         fill
-                        className="object-cover"
+                        className="object-cover object-[center_25%]"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-900">
