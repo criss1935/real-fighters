@@ -11,6 +11,7 @@ export default function FightersPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedDivision, setSelectedDivision] = useState('all')
   const [selectedDiscipline, setSelectedDiscipline] = useState('all')
+  const [selectedNivel, setSelectedNivel] = useState('all')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -19,7 +20,7 @@ export default function FightersPage() {
 
   useEffect(() => {
     filterFighters()
-  }, [fighters, searchTerm, selectedDivision, selectedDiscipline])
+  }, [fighters, searchTerm, selectedDivision, selectedDiscipline, selectedNivel])
 
   async function loadFighters() {
     try {
@@ -88,16 +89,34 @@ export default function FightersPage() {
       filtered = filtered.filter(f => f.division === selectedDivision)
     }
 
-    // Filtro por disciplina
+    // Filtro por disciplina: coincide si CUALQUIERA de sus records es de esa disciplina
     if (selectedDiscipline !== 'all') {
-      filtered = filtered.filter(f => f.discipline === selectedDiscipline)
+      filtered = filtered.filter(f =>
+        (Array.isArray(f.records) ? f.records : []).some(
+          (r: any) => r?.disciplina === selectedDiscipline
+        )
+      )
+    }
+
+    // Filtro por nivel (profesional / amateur)
+    if (selectedNivel !== 'all') {
+      filtered = filtered.filter(f => f.nivel === selectedNivel)
     }
 
     setFilteredFighters(filtered)
   }
 
   const divisions = Array.from(new Set(fighters.map(f => f.division).filter(Boolean)))
-  const disciplines = Array.from(new Set(fighters.map(f => f.discipline).filter(Boolean)))
+  // Las disciplinas viven dentro de records (un peleador puede tener varias),
+  // no en la columna disciplina, que quedo vacia al migrar al modelo nuevo
+  const disciplines = Array.from(
+    new Set(
+      fighters.flatMap(f =>
+        (Array.isArray(f.records) ? f.records : []).map((r: any) => r?.disciplina).filter(Boolean)
+      )
+    )
+  ).sort()
+  const niveles = Array.from(new Set(fighters.map(f => f.nivel).filter(Boolean))).sort()
 
   if (loading) {
     return (
@@ -175,16 +194,36 @@ export default function FightersPage() {
                 ))}
               </select>
             </div>
+
+            {/* Filtro por nivel */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Filtrar por nivel
+              </label>
+              <select
+                value={selectedNivel}
+                onChange={(e) => setSelectedNivel((e.target as HTMLSelectElement).value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              >
+                <option value="all">Todos los niveles</option>
+                {niveles.map(n => (
+                  <option key={n} value={n} className="capitalize">
+                    {n === 'profesional' ? 'Profesional' : n === 'amateur' ? 'Amateur' : n}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Botón limpiar filtros */}
-          {(searchTerm || selectedDivision !== 'all' || selectedDiscipline !== 'all') && (
+          {(searchTerm || selectedDivision !== 'all' || selectedDiscipline !== 'all' || selectedNivel !== 'all') && (
             <div className="mt-4 text-center">
               <button
                 onClick={() => {
                   setSearchTerm('')
                   setSelectedDivision('all')
                   setSelectedDiscipline('all')
+                  setSelectedNivel('all')
                 }}
                 className="text-red-600 hover:text-red-700 font-semibold text-sm"
               >
@@ -203,6 +242,7 @@ export default function FightersPage() {
                 setSearchTerm('')
                 setSelectedDivision('all')
                 setSelectedDiscipline('all')
+                setSelectedNivel('all')
               }}
               className="mt-4 text-red-600 hover:text-red-700 font-semibold"
             >
@@ -253,10 +293,16 @@ export default function FightersPage() {
                       </span>
                     </div>
 
-                    {fighter.discipline && (
+                    {(Array.isArray(fighter.records) && fighter.records.length > 0) && (
                       <p className="text-xs text-gray-500">
-                        {fighter.discipline}
+                        {fighter.records.map((r: any) => r?.disciplina).filter(Boolean).join(' · ')}
                       </p>
+                    )}
+
+                    {fighter.nivel && (
+                      <span className="inline-block mt-2 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide rounded bg-red-100 text-red-700">
+                        {fighter.nivel}
+                      </span>
                     )}
 
                     {fighter.gym && (
