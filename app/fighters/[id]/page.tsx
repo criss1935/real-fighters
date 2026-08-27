@@ -44,7 +44,7 @@ type Fighter = {
   link_tapology: string | null
   fecha_nacimiento: string | null
   entrenador: string | null
-  campeonatos: string | null
+  campeonatos: { titulo: string; liga: string; fecha: string }[] | null
 }
 
 type Fight = {
@@ -429,15 +429,32 @@ export default function FighterDetailPage() {
               </div>
               
               {/* Campeonatos */}
-              {fighter.campeonatos && fighter.campeonatos !== '0' && (
+              {Array.isArray(fighter.campeonatos) && fighter.campeonatos.length > 0 && (
                 <div className="mt-6 pt-6 border-t">
                   <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center">
                     <Trophy className="w-5 h-5 mr-2 text-yellow-600" />
                     Campeonatos
                   </h3>
-                  <p className="text-gray-700 text-sm whitespace-pre-line">
-                    {fighter.campeonatos}
-                  </p>
+                  <ul className="space-y-2">
+                    {fighter.campeonatos.map((c: any, i: number) => (
+                      <li
+                        key={i}
+                        className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-3"
+                      >
+                        <Trophy className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-semibold text-gray-900">{c.titulo}</p>
+                          {(c.liga || c.fecha) && (
+                            <p className="text-sm text-gray-600">
+                              {c.liga}
+                              {c.liga && c.fecha && ' · '}
+                              {c.fecha}
+                            </p>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
             </div>

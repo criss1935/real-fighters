@@ -305,6 +305,12 @@ export default function FightersPage() {
                       </span>
                     )}
 
+                    {Array.isArray(fighter.campeonatos) && fighter.campeonatos.length > 0 && (
+                      <span className="inline-block mt-2 ml-1 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide rounded bg-amber-100 text-amber-800">
+                        🏆 Campeón
+                      </span>
+                    )}
+
                     {fighter.gym && (
                       <p className="text-xs text-gray-500 mt-1">
                         {fighter.gym}
