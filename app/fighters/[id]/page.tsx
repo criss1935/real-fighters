@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Image from 'next/image'
-import { ArrowLeft, Trophy, Target, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Trophy, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 
 function calcularEdad(fechaNacimiento?: string | null): number | null {
@@ -47,20 +47,6 @@ type Fighter = {
   campeonatos: { titulo: string; liga: string; fecha: string }[] | null
 }
 
-type Fight = {
-  id: number
-  event_id: number
-  event_name: string
-  event_date: string | null
-  red_fighter_id: number
-  blue_fighter_id: number
-  red_fighter_name: string
-  blue_fighter_name: string
-  result: 'red' | 'blue' | 'draw' | 'nc'
-  method: string | null
-  round: number | null
-  time: string | null
-}
 
 // Función para parsear récord de texto
 function parseRecord(recordText: string | null): { wins: number; losses: number; draws: number } {
@@ -130,7 +116,6 @@ export default function FighterDetailPage() {
   const fighterId = params.id as string
 
   const [fighter, setFighter] = useState<Fighter | null>(null)
-  const [fights, setFights] = useState<Fight[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -149,36 +134,6 @@ export default function FighterDetailPage() {
       }
 
       setFighter(fighterData)
-
-      // Intentar obtener peleas de la tabla fights
-      const { data: fightsData } = await supabase
-        .from('fights')
-        .select(`
-          *,
-          event:events(name, event_date),
-          red_fighter:fighters!fights_red_fighter_id_fkey(nombre),
-          blue_fighter:fighters!fights_blue_fighter_id_fkey(nombre)
-        `)
-        .or(`red_fighter_id.eq.${fighterId},blue_fighter_id.eq.${fighterId}`)
-        .order('created_at', { ascending: false })
-
-      if (fightsData && fightsData.length > 0) {
-        const formattedFights = fightsData.map((fight: any) => ({
-          id: fight.id,
-          event_id: fight.event_id,
-          event_name: fight.event?.name || 'Evento sin nombre',
-          event_date: fight.event?.event_date || null,
-          red_fighter_id: fight.red_fighter_id,
-          blue_fighter_id: fight.blue_fighter_id,
-          red_fighter_name: fight.red_fighter?.nombre || 'Desconocido',
-          blue_fighter_name: fight.blue_fighter?.nombre || 'Desconocido',
-          result: fight.result,
-          method: fight.method,
-          round: fight.round,
-          time: fight.time
-        }))
-        setFights(formattedFights)
-      }
 
       setLoading(false)
     }
@@ -210,25 +165,6 @@ export default function FighterDetailPage() {
   const record = parseRecord(fighter.record_profesional)
   const totalFights = record.wins + record.losses + record.draws
   const winPercentage = totalFights > 0 ? ((record.wins / totalFights) * 100).toFixed(0) : '0'
-
-  const getFightResult = (fight: Fight) => {
-    const isFighterRed = fight.red_fighter_id === parseInt(fighterId)
-    const isFighterBlue = fight.blue_fighter_id === parseInt(fighterId)
-    
-    if (fight.result === 'draw') return { text: 'Empate', color: 'text-gray-600' }
-    if (fight.result === 'nc') return { text: 'Sin resultado', color: 'text-gray-500' }
-    
-    const won = (isFighterRed && fight.result === 'red') || (isFighterBlue && fight.result === 'blue')
-    return won 
-      ? { text: 'Victoria', color: 'text-green-600' }
-      : { text: 'Derrota', color: 'text-red-600' }
-  }
-
-  const getOpponentName = (fight: Fight) => {
-    return fight.red_fighter_id === parseInt(fighterId) 
-      ? fight.blue_fighter_name 
-      : fight.red_fighter_name
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -320,10 +256,10 @@ export default function FighterDetailPage() {
 
       {/* Contenido principal */}
       <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="max-w-3xl mx-auto">
           {/* Columna izquierda - Info */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md p-6 sticky top-8">
+          <div>
+            <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">
                 Información
               </h2>
@@ -460,82 +396,6 @@ export default function FighterDetailPage() {
             </div>
           </div>
 
-          {/* Columna derecha - Historial */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-                <Trophy className="w-6 h-6 mr-2 text-yellow-600" />
-                Historial de Peleas
-              </h2>
-              
-              {fights.length === 0 ? (
-                <div className="text-center py-12">
-                  <Target className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                  <p className="text-gray-600 mb-2">
-                    No hay peleas registradas en el sistema
-                  </p>
-                  {(fighter.record_profesional || fighter.record_amateur) && (
-                    <p className="text-sm text-gray-500">
-                      Récord registrado: {fighter.record_profesional || fighter.record_amateur}
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {fights.map((fight) => {
-                    const result = getFightResult(fight)
-                    const opponent = getOpponentName(fight)
-                    
-                    return (
-                      <div 
-                        key={fight.id}
-                        className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition"
-                      >
-                        <div className="flex justify-between items-start mb-3">
-                          <div>
-                            <h3 className="font-bold text-gray-900">
-                              {fight.event_name}
-                            </h3>
-                            {fight.event_date && (
-                              <p className="text-sm text-gray-600">
-                                {new Date(fight.event_date).toLocaleDateString('es-MX', {
-                                  year: 'numeric',
-                                  month: 'long',
-                                  day: 'numeric'
-                                })}
-                              </p>
-                            )}
-                          </div>
-                          
-                          <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                            result.text === 'Victoria' 
-                              ? 'bg-green-100 text-green-800' 
-                              : result.text === 'Derrota'
-                              ? 'bg-red-100 text-red-800'
-                              : 'bg-gray-100 text-gray-800'
-                          }`}>
-                            {result.text}
-                          </span>
-                        </div>
-                        
-                        <div className="text-gray-700 mb-2">
-                          <strong>vs</strong> {opponent}
-                        </div>
-                        
-                        {fight.method && (
-                          <div className="text-sm text-gray-600">
-                            <strong>Método:</strong> {fight.method}
-                            {fight.round && ` • Round ${fight.round}`}
-                            {fight.time && ` • ${fight.time}`}
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
         </div>
       </div>
     </div>

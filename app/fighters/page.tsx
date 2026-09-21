@@ -252,9 +252,6 @@ export default function FightersPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredFighters.map((fighter: any) => {
-              const record = fighter.fighter_records?.[0] || { wins: 0, losses: 0, draws: 0, no_contest: 0 }
-              const recordString = `${record.wins}-${record.losses}-${record.draws}`
-
               return (
                 <Link 
                   href={`/fighters/${fighter.id}`} 
@@ -286,11 +283,8 @@ export default function FightersPage() {
                       <p className="text-sm text-gray-600 italic mb-2">"{fighter.nickname}"</p>
                     )}
                     
-                    <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+                    <div className="text-sm text-gray-600 mb-2">
                       <span className="font-semibold">{fighter.division || 'Sin división'}</span>
-                      <span className="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">
-                        {recordString}
-                      </span>
                     </div>
 
                     {(Array.isArray(fighter.records) && fighter.records.length > 0) && (
