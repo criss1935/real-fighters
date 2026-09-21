@@ -18,6 +18,7 @@ export default function Header() {
     { href: '/clases', label: 'Clases' },
     { href: '/fighters', label: 'Peleadores' },
     { href: '/students', label: 'Alumnos' },
+    { href: '/inscripcion', label: 'Inscripción' },
     { href: '/events', label: 'Eventos' },
     { href: '/announcements', label: 'Noticias' },
     { href: '/tienda', label: 'Tienda' },
