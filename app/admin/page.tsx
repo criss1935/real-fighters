@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { ExportAlumnosButton, ExpedienteModal, useExpedientes } from '@/components/admin/ExpedienteTools'
 import { Users, Calendar, Trophy, LogOut, UserCircle, Newspaper, Eye, Trash2, Edit, X, Upload, Home, BookOpen, DollarSign, ShoppingBag } from 'lucide-react';
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
@@ -1544,6 +1545,9 @@ export default function AdminPage() {
 // ============ TAB COMPONENTS ============
 
 function AdminStudentsTab({ studentForm, setStudentForm, studentImageFile, studentImagePreview, handleStudentImageSelect, handleCreateOrUpdateStudent, uploadingStudentImage, students, handleEditStudent, handleDeleteStudent }: any) {
+  const expedientes = useExpedientes(students.length)
+  const [expStudent, setExpStudent] = useState<{ id: number; name: string } | null>(null)
+  const completos = students.filter((st: any) => expedientes[st.id]).length
   return (
     <div>
       <h2 className="text-xl font-bold text-gray-900 mb-6">
@@ -1619,7 +1623,16 @@ function AdminStudentsTab({ studentForm, setStudentForm, studentImageFile, stude
         </button>
       </form>
 
-      <h3 className="text-lg font-bold text-gray-900 mb-4">Alumnos ({students.length})</h3>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <h3 className="text-lg font-bold text-gray-900">
+          Alumnos ({students.length}) <span className="text-sm font-normal text-gray-500">· {completos} con expediente</span>
+        </h3>
+        <div className="flex items-center gap-2">
+          <a href="/inscripcion" target="_blank" rel="noopener noreferrer" className="px-4 py-2 rounded-lg bg-gray-900 hover:bg-black text-white text-sm font-semibold">Abrir kiosco</a>
+          <ExportAlumnosButton />
+        </div>
+      </div>
+      <ExpedienteModal student={expStudent} onClose={() => setExpStudent(null)} />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {students.map((student: any)=> (
           <div key={student.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
@@ -1635,6 +1648,9 @@ function AdminStudentsTab({ studentForm, setStudentForm, studentImageFile, stude
                 <h4 className="font-bold text-gray-900 truncate">{student.name}</h4>
                 {student.discipline && <p className="text-sm text-gray-600">{student.discipline}</p>}
                 {student.belt_level && <p className="text-xs text-gray-500">Cinturón: {student.belt_level}</p>}
+                <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[11px] font-semibold ${expedientes[student.id] ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                  {expedientes[student.id] ? '✔ Expediente' : '✘ Sin expediente'}
+                </span>
               </div>
             </div>
 
@@ -1642,6 +1658,9 @@ function AdminStudentsTab({ studentForm, setStudentForm, studentImageFile, stude
               <button onClick={() => handleEditStudent(student)} className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded transition text-sm">
                 <Edit className="w-4 h-4" />
                 Editar
+              </button>
+              <button onClick={() => setExpStudent({ id: student.id, name: student.name })} className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded transition text-sm">
+                Expediente
               </button>
               <button onClick={() => handleDeleteStudent(student.id, student.photo_url)} className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded transition">
                 <Trash2 className="w-4 h-4" />

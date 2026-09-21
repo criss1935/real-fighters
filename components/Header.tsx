@@ -9,6 +9,9 @@ import { Menu, X } from 'lucide-react'
 export default function Header() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  // Modo kiosco: la tablet de recepción no debe mostrar la navegación del sitio
+  if (pathname?.startsWith('/inscripcion')) return null
   
   const navLinks = [
     { href: '/', label: 'Inicio' },
