@@ -15,6 +15,17 @@ Reutiliza la misma app de Meta ("Rfm bot") que WhatsApp; el webhook de WhatsApp
 | `INSTAGRAM_ACCESS_TOKEN` | Opcional. Si no existe, Instagram usa `META_PAGE_ACCESS_TOKEN` (cuenta ligada a la página) |
 | `RECEPTION_WHATSAPP_URL` | Opcional. Enlace `https://wa.me/52...` al WhatsApp de recepción para el handoff |
 | `OPENAI_API_KEY` | Ya existe por WhatsApp |
+| `OPENAI_MODEL` | Opcional. Modelo de OpenAI (por defecto `gpt-4o-mini`) |
+| `FALLBACK_API_KEY`, `FALLBACK_BASE_URL`, `FALLBACK_MODEL` | Opcionales. Proveedor de respaldo compatible con OpenAI que se usa cuando OpenAI falla (sin saldo, límite, caída). Deben venir las tres |
+| `FALLBACK2_API_KEY`, `FALLBACK2_BASE_URL`, `FALLBACK2_MODEL` | Opcionales. Segundo respaldo, mismo formato |
+
+Ejemplos de respaldo gratuito (todos con API compatible con OpenAI):
+
+- Groq: `FALLBACK_BASE_URL=https://api.groq.com/openai/v1`, `FALLBACK_MODEL=llama-3.3-70b-versatile`
+- OpenRouter: `FALLBACK_BASE_URL=https://openrouter.ai/api/v1`, `FALLBACK_MODEL=` un modelo con sufijo `:free`
+- Gemini: `FALLBACK_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/`, `FALLBACK_MODEL=gemini-2.0-flash`
+
+Orden de intento: OpenAI, `FALLBACK`, `FALLBACK2`. Si un proveedor falla por saldo o llave inválida se salta 10 min; por otros errores, 1 min. Si todos fallan se envía el mensaje de "ahorita no te puedo responder". Los planes gratuitos tienen límites de uso y pueden usar los mensajes para mejorar sus modelos: no se envían datos personales más allá del texto de la conversación.
 
 ## Configuración en Meta for Developers
 
