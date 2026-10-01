@@ -26,6 +26,13 @@ const MAX_TYPING_DELAY_MS = 4_000;
 const ATTACHMENT_REPLY =
   "Por aquí solo puedo leer mensajes de texto. Cuéntame por escrito qué te gustaría saber de las clases 🙂";
 
+// Texto del saludo automático configurado en Meta Business Suite (respuesta
+// instantánea). Ajustable con META_AUTO_GREETING_PATTERN si cambia el mensaje.
+const AUTO_GREETING_PATTERN = new RegExp(
+  process.env.META_AUTO_GREETING_PATTERN || "gracias por comunicarte con real fighters",
+  "i",
+);
+
 interface MessagingEvent {
   sender?: { id?: string };
   recipient?: { id?: string };
@@ -122,7 +129,16 @@ function collectMessages(body: any): IncomingMessage[] {
         const echoAppId = String(message.app_id ?? "");
         const userId = event.recipient?.id;
         console.info(`[meta] eco ${channel} app_id=${echoAppId || "-"}`);
-        if (userId && echoAppId !== "" && echoAppId !== "0" && !ourAppIds.has(echoAppId)) {
+        // La "respuesta instantánea" de Meta sale con el app_id de Page Inbox, igual
+        // que una respuesta manual: se reconoce por su texto para no pausar el bot.
+        const isAutoGreeting = AUTO_GREETING_PATTERN.test(message.text ?? "");
+        if (
+          userId &&
+          !isAutoGreeting &&
+          echoAppId !== "" &&
+          echoAppId !== "0" &&
+          !ourAppIds.has(echoAppId)
+        ) {
           pauseForHuman(`${channel}:${userId}`);
         }
         continue;
