@@ -111,9 +111,18 @@ function collectMessages(body: any): IncomingMessage[] {
       if (message.is_echo) {
         // Eco de un mensaje enviado desde la página/cuenta. Si NO lo mandó esta
         // app, una persona del gym respondió a mano: pausar el bot en ese hilo.
-        const ourAppId = process.env.META_APP_ID;
+        // Ojo: en Instagram el eco de los mensajes del propio bot puede venir sin
+        // app_id o con el ID de la app de Instagram; solo se pausa si el app_id
+        // existe y NO es ninguno de los nuestros (p. ej. Page Inbox / un humano).
+        const ourAppIds = new Set(
+          [process.env.META_APP_ID, process.env.INSTAGRAM_APP_ID, "1451866913637805"]
+            .filter(Boolean)
+            .map(String),
+        );
+        const echoAppId = String(message.app_id ?? "");
         const userId = event.recipient?.id;
-        if (ourAppId && userId && String(message.app_id ?? "") !== ourAppId) {
+        console.info(`[meta] eco ${channel} app_id=${echoAppId || "-"}`);
+        if (userId && echoAppId !== "" && echoAppId !== "0" && !ourAppIds.has(echoAppId)) {
           pauseForHuman(`${channel}:${userId}`);
         }
         continue;
