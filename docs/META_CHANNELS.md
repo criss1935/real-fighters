@@ -12,7 +12,8 @@ Reutiliza la misma app de Meta ("Rfm bot") que WhatsApp; el webhook de WhatsApp
 | `META_APP_SECRET` | App secret de la app (Configuración → Básica). Sin esto todos los POST se rechazan con 401 |
 | `META_APP_ID` | ID de la app (2173494530100737). Permite detectar cuando una persona responde a mano y pausar el bot 12 h en ese hilo |
 | `META_PAGE_ACCESS_TOKEN` | Token de la página "Real Fighters Mexico" (Messenger). Usar un token de larga duración |
-| `INSTAGRAM_ACCESS_TOKEN` | Opcional. Si no existe, Instagram usa `META_PAGE_ACCESS_TOKEN` (cuenta ligada a la página) |
+| `INSTAGRAM_ACCESS_TOKEN` | Token de la cuenta de Instagram (API de Instagram con login de Instagram); se usa contra graph.instagram.com. Si no existe, Instagram usa `META_PAGE_ACCESS_TOKEN` |
+| `INSTAGRAM_APP_SECRET` | Clave secreta de la app de Instagram (Casos de uso → API de Instagram). Meta firma los webhooks de Instagram con esta clave |
 | `RECEPTION_WHATSAPP_URL` | Opcional. Enlace `https://wa.me/52...` al WhatsApp de recepción para el handoff |
 | `OPENAI_API_KEY` | Ya existe por WhatsApp |
 | `OPENAI_MODEL` | Opcional. Modelo de OpenAI (por defecto `gpt-4o-mini`) |
