@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { after } from "next/server";
-import OpenAI from "openai";
+import { generateReply } from "@/lib/bot/reply";
+import type { ChatMessage } from "@/lib/bot/state";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,36 +10,6 @@ export const maxDuration = 30;
 
 const GRAPH_API_BASE = "https://graph.facebook.com/v20.0";
 
-const SYSTEM_PROMPT = `Eres el asistente virtual de Real Fighters MX, academia de MMA y artes marciales en CDMX.
-Responde siempre en español mexicano, tono amigable y directo como hablaría un humano del gym.
-Usa frases cortas, naturales. Puedes usar algún emoji ocasionalmente (no en cada mensaje).
-Nunca digas que eres un bot o IA.
-
-INFORMACIÓN DEL GYM (usa solo estos datos, no inventes nada más):
-
-UBICACIÓN:
-Calz. del Hueso 590, Coapa, Los Girasoles, Coyoacán, 04920, Ciudad de México, CDMX.
-
-CLASES, HORARIOS Y PRECIOS:
-- MMA (desde 13 años): Lunes, Miércoles y Viernes — 7:00 a 8:00 am / 9:00 a 10:30 am / 8:00 a 9:30 pm. $900/mes.
-- Muay Thai (desde 10 años): Martes, Jueves y Sábado — 9:00 a 10:30 am / Principiantes 7:00 a 8:00 pm / Todos los niveles 8:00 a 9:30 pm. $900/mes.
-- Jiu Jitsu (desde 6 años): Martes y Jueves — 7:00 a 8:30 am / 8:00 a 9:30 pm. $900/mes.
-- Boxeo Mexicano (desde 8 años): Lunes a Sábado — 7:00 a 11:00 am / 6:00 a 10:00 pm. $1,200/mes.
-- CrossFit (desde 15 años): Lunes a Sábado — clases a las 5, 6, 7, 8 y 9 pm. $1,200/mes.
-- Plan RFM (el más popular): acceso ilimitado a TODAS las clases y disciplinas, horarios flexibles. $1,600/mes.
-
-PRIMERA CLASE:
-No hay clases gratis. Se puede agendar una clase muestra; si preguntan cómo agendarla o cuánto cuesta, di que ahorita les confirman los detalles.
-
-QUÉ LLEVAR:
-Ropa cómoda y agua. A los alumnos nuevos se les presta equipo (guantes, espinilleras, según la disciplina). Para boxeo/Muay Thai conviene llevar vendas de 5 cm — también las vendemos en el gym.
-
-CONSEJOS PARA EMPEZAR:
-Cualquiera puede empezar sin experiencia; hay clases para principiantes. Recomienda llegar 10-15 minutos antes de la clase. Si no saben qué disciplina elegir, pregúntales qué buscan (defensa personal, condición física, competencia) y recomienda con base en eso, o sugiere el Plan RFM para probar de todo.
-
-Si te preguntan algo que NO está en esta información (inscripción, promociones, formas de pago, disponibilidad de cupo, clases para niños menores a las edades indicadas, etc.), di que ahorita te checan y que espere un momento, o que llame al gym. No inventes información. Máximo 3 párrafos cortos por respuesta.`;
-
-const FALLBACK_MESSAGE = "Ahorita no te puedo responder, intenta en un momento 🙏";
 
 const MAX_HISTORY_MESSAGES = 20;
 const RATE_LIMIT_MS = 2_000;
@@ -47,14 +18,6 @@ const MAX_PROCESSED_IDS = 1_000;
 const MIN_TYPING_DELAY_MS = 1_500;
 const MAX_TYPING_DELAY_MS = 4_000;
 
-// Lazy: instanciar en build time falla si OPENAI_API_KEY no está definida
-let openaiClient: OpenAI | null = null;
-function getOpenAI(): OpenAI {
-  openaiClient ??= new OpenAI();
-  return openaiClient;
-}
-
-type ChatMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam;
 
 // Estado en memoria: vive mientras la instancia serverless esté caliente.
 // Suficiente para dedupe/rate-limit/contexto conversacional de corto plazo.
@@ -183,23 +146,6 @@ function cleanupStaleConversations(now: number) {
       conversations.delete(phone);
       lastMessageTimestamps.delete(phone);
     }
-  }
-}
-
-async function generateReply(messages: ChatMessage[]): Promise<string> {
-  try {
-    const response = await getOpenAI().chat.completions.create({
-      model: "gpt-4o-mini",
-      max_tokens: 400,
-      messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
-    });
-
-    const text = response.choices[0]?.message?.content?.trim() ?? "";
-
-    return text !== "" ? text : FALLBACK_MESSAGE;
-  } catch (error) {
-    console.error("[whatsapp-webhook] Error llamando a OpenAI:", error);
-    return FALLBACK_MESSAGE;
   }
 }
 
