@@ -2,6 +2,10 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 // Permite apuntar a un mock local en pruebas (META_GRAPH_BASE).
 const GRAPH_API_BASE = process.env.META_GRAPH_BASE || "https://graph.facebook.com/v20.0";
+// Los tokens de la API de Instagram con login de Instagram (INSTAGRAM_ACCESS_TOKEN)
+// se usan contra graph.instagram.com.
+const INSTAGRAM_GRAPH_API_BASE =
+  process.env.META_GRAPH_BASE || "https://graph.instagram.com/v20.0";
 
 export type MetaChannel = "messenger" | "instagram";
 
@@ -10,14 +14,22 @@ export type MetaChannel = "messenger" | "instagram";
  * Devuelve false si falta el app secret, el header o si no coincide.
  */
 export function verifySignature(rawBody: string, header: string | null): boolean {
-  const secret = process.env.META_APP_SECRET;
-  if (!secret || !header?.startsWith("sha256=")) return false;
+  if (!header?.startsWith("sha256=")) return false;
 
-  const expected = createHmac("sha256", secret).update(rawBody, "utf8").digest("hex");
-  const received = header.slice("sha256=".length);
-  const a = Buffer.from(expected, "utf8");
-  const b = Buffer.from(received, "utf8");
-  return a.length === b.length && timingSafeEqual(a, b);
+  // Messenger firma con el app secret de la app; Instagram (login de Instagram)
+  // firma con el app secret propio de la app de Instagram.
+  const secrets = [process.env.META_APP_SECRET, process.env.INSTAGRAM_APP_SECRET].filter(
+    (s): s is string => Boolean(s),
+  );
+  const received = Buffer.from(header.slice("sha256=".length), "utf8");
+
+  return secrets.some((secret) => {
+    const expected = Buffer.from(
+      createHmac("sha256", secret).update(rawBody, "utf8").digest("hex"),
+      "utf8",
+    );
+    return expected.length === received.length && timingSafeEqual(expected, received);
+  });
 }
 
 function accessTokenFor(channel: MetaChannel): string | undefined {
@@ -35,8 +47,12 @@ async function post(channel: MetaChannel, payload: Record<string, unknown>) {
     console.error(`[meta] Falta el access token para ${channel}`);
     return;
   }
+  const base =
+    channel === "instagram" && process.env.INSTAGRAM_ACCESS_TOKEN
+      ? INSTAGRAM_GRAPH_API_BASE
+      : GRAPH_API_BASE;
   try {
-    const res = await fetch(`${GRAPH_API_BASE}/me/messages`, {
+    const res = await fetch(`${base}/me/messages`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
