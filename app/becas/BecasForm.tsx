@@ -10,23 +10,18 @@ import {
   DOC_MAX_FILES,
   DOC_MIME,
   INGRESO_LABEL,
-  MOTIVO_LABEL,
-  MOTIVOS_BECA,
+  NIVEL_LABEL,
+  NIVELES,
+  PERFIL_LABEL,
+  PERFILES,
   RANGOS_INGRESO,
-  TIPO_LABEL,
-  TIPOS_BECA,
 } from '@/lib/becas'
 
-type Tipo = (typeof TIPOS_BECA)[number]
-type Motivo = (typeof MOTIVOS_BECA)[number]
+type Perfil = (typeof PERFILES)[number]
 
-const TIPO_DESC: Record<Tipo, string> = {
-  amateur: 'Para quienes entrenan o compiten a nivel amateur.',
-  profesional: 'Para peleadores con carrera o debut profesional.',
-}
-const MOTIVO_DESC: Record<Motivo, string> = {
-  socioeconomico: 'Tu situación económica dificulta cubrir la mensualidad.',
-  desempeno: 'Tus resultados o compromiso deportivo te respaldan.',
+const PERFIL_DESC: Record<Perfil, string> = {
+  alumno: 'Ya soy alumno regular de Real Fighters.',
+  nuevo: 'Quiero empezar a entrenar, aunque no tenga experiencia.',
 }
 
 const inputCls = 'w-full rounded-lg border border-zinc-300 px-4 py-3 text-base focus:border-red-600 focus:outline-none focus:ring-2 focus:ring-red-600/30'
@@ -37,10 +32,10 @@ const cardOff = 'border-zinc-800 bg-zinc-950 hover:border-zinc-600'
 function Section({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
   return (
     <section className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5 md:p-7">
-      <h2 className="mb-5 flex items-center gap-3 text-2xl md:text-3xl">
+      <h3 className="mb-5 flex items-center gap-3 text-2xl md:text-3xl">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-600 font-sans text-base font-bold">{n}</span>
         {title}
-      </h2>
+      </h3>
       {children}
     </section>
   )
@@ -64,15 +59,12 @@ function formatBytes(n: number) {
 }
 
 export default function BecasForm({ disciplinas, filiales }: { disciplinas: string[]; filiales: string[] }) {
-  const [tipo, setTipo] = useState<Tipo | ''>('')
-  const [motivos, setMotivos] = useState<Motivo[]>([])
-  const [g, setG] = useState({
-    nombre: '', telefono: '', email: '', fecha_nacimiento: '', tutor_nombre: '',
-    filial: '', disciplina: '', es_alumno: '' as '' | 'si' | 'no', tiempo_entrenando: '',
-  })
+  const [perfil, setPerfil] = useState<Perfil | ''>('')
+  const [g, setG] = useState({ nombre: '', telefono: '', email: '', fecha_nacimiento: '', tutor_nombre: '', filial: '', disciplina: '', tiempo_entrenando: '' })
+  const [esc, setEsc] = useState({ nivel_educativo: '', escuela: '', grado: '', promedio: '', esfuerzo: '' })
+  const [socioSi, setSocioSi] = useState<'' | 'si' | 'no'>('')
   const [socio, setSocio] = useState({ ocupacion: '', dependientes: '', ingreso_rango: '', situacion: '' })
-  const [desemp, setDesemp] = useState({ record: '', logros: '', link: '' })
-  const [exposicion, setExposicion] = useState('')
+  const [motivacion, setMotivacion] = useState('')
   const [files, setFiles] = useState<File[]>([])
   const [privacidad, setPrivacidad] = useState(false)
   const [veracidad, setVeracidad] = useState(false)
@@ -83,8 +75,8 @@ export default function BecasForm({ disciplinas, filiales }: { disciplinas: stri
   const [done, setDone] = useState<{ folio: string; fallidos: number } | null>(null)
 
   const menor = useMemo(() => (g.fecha_nacimiento ? esMenor(g.fecha_nacimiento) : false), [g.fecha_nacimiento])
-  const upd = <K extends keyof typeof g>(k: K, v: (typeof g)[K]) => setG((s) => ({ ...s, [k]: v }))
-  const toggleMotivo = (m: Motivo) => setMotivos((s) => (s.includes(m) ? s.filter((x) => x !== m) : [...s, m]))
+  const upd = <K extends keyof typeof g>(k: K, v: string) => setG((s) => ({ ...s, [k]: v }))
+  const updE = <K extends keyof typeof esc>(k: K, v: string) => setEsc((s) => ({ ...s, [k]: v }))
 
   function addFiles(list: FileList | null) {
     if (!list) return
@@ -102,8 +94,8 @@ export default function BecasForm({ disciplinas, filiales }: { disciplinas: stri
 
   function buildPayload() {
     return {
-      tipo,
-      motivos,
+      perfil,
+      socioeconomico: socioSi === 'si',
       nombre: g.nombre,
       telefono: g.telefono,
       email: g.email,
@@ -111,16 +103,21 @@ export default function BecasForm({ disciplinas, filiales }: { disciplinas: stri
       tutor_nombre: g.tutor_nombre,
       filial: g.filial,
       disciplina: g.disciplina,
-      es_alumno: g.es_alumno === 'si',
-      tiempo_entrenando: g.tiempo_entrenando,
+      tiempo_entrenando: perfil === 'alumno' ? g.tiempo_entrenando : '',
+      escolar: {
+        nivel_educativo: esc.nivel_educativo,
+        escuela: esc.escuela,
+        grado: esc.grado,
+        promedio: esc.promedio === '' ? undefined : Number(esc.promedio),
+        esfuerzo: esc.esfuerzo,
+      },
       socio: {
         ocupacion: socio.ocupacion,
         dependientes: socio.dependientes === '' ? null : Number(socio.dependientes),
         ingreso_rango: socio.ingreso_rango || null,
         situacion: socio.situacion,
       },
-      desempeno: desemp,
-      exposicion,
+      motivacion,
       documentos: files.map((f) => ({ name: f.name, type: f.type, size: f.size })),
       acepta_privacidad: privacidad,
       declara_veracidad: veracidad,
@@ -132,13 +129,13 @@ export default function BecasForm({ disciplinas, filiales }: { disciplinas: stri
     setFatal(null)
     const payload = buildPayload()
     const v = becaSchema.safeParse(payload)
-    if (!v.success || g.es_alumno === '') {
+    if (!v.success || socioSi === '') {
       const map: Record<string, string> = {}
       for (const i of v.success ? [] : v.error.issues) {
         const k = i.path.join('.')
         if (!map[k]) map[k] = i.message
       }
-      if (g.es_alumno === '') map.es_alumno = 'Indica si ya entrenas en Real Fighters'
+      if (socioSi === '') map.socioSi = 'Indica si tu situación socioeconómica es parte del motivo'
       setErrors(map)
       setFatal('Revisa los campos marcados en rojo.')
       return
@@ -160,7 +157,7 @@ export default function BecasForm({ disciplinas, filiales }: { disciplinas: stri
       }
       fallidos += Math.max(0, files.length - uploads.length)
       setDone({ folio: res.folio, fallidos })
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+      document.getElementById('solicitud')?.scrollIntoView({ behavior: 'smooth' })
     } catch (err) {
       setFatal(err instanceof Error ? err.message : 'Error inesperado')
     } finally {
@@ -172,11 +169,14 @@ export default function BecasForm({ disciplinas, filiales }: { disciplinas: stri
     return (
       <div className="rounded-2xl border border-red-600/50 bg-zinc-950 p-8 text-center">
         <p className="text-sm font-semibold uppercase tracking-widest text-red-500">Solicitud recibida</p>
-        <h2 className="mt-2 text-5xl">{done.folio}</h2>
-        <p className="mt-4 text-zinc-300">Guarda tu folio. El equipo de Real Fighters revisará tu solicitud y te contactará por teléfono o WhatsApp con el resultado.</p>
+        <p className="mt-2 text-5xl" style={{ fontFamily: "'Bebas Neue', sans-serif" }}>{done.folio}</p>
+        <p className="mt-4 text-zinc-300">
+          Guarda tu folio. El Comité revisará tu solicitud y recepción te comunicará el resultado por WhatsApp a más tardar el 6 de diciembre.
+        </p>
         {done.fallidos > 0 && (
           <p className="mt-4 rounded-lg bg-amber-500/10 p-3 text-sm text-amber-300">
-            {done.fallidos === 1 ? 'Un archivo no se pudo subir' : `${done.fallidos} archivos no se pudieron subir`}. Tu solicitud sí quedó registrada; envía el comprobante en recepción mencionando tu folio.
+            {done.fallidos === 1 ? 'Un archivo no se pudo subir' : `${done.fallidos} archivos no se pudieron subir`}. Tu solicitud sí quedó
+            registrada; entrega el comprobante en recepción mencionando tu folio.
           </p>
         )}
         <Link href="/" className="mt-6 inline-block rounded-lg bg-red-600 px-6 py-3 font-bold hover:bg-red-700">
@@ -187,35 +187,30 @@ export default function BecasForm({ disciplinas, filiales }: { disciplinas: stri
   }
 
   const err = (k: string) => errors[k]
+  let n = 0
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-6">
-      <Section n={1} title="Tipo de beca">
+      <Section n={++n} title="¿Ya entrenas en RFM o quieres iniciar?">
         <div className="grid gap-3 sm:grid-cols-2">
-          {TIPOS_BECA.map((t) => (
-            <button key={t} type="button" onClick={() => setTipo(t)} className={`${cardBase} ${tipo === t ? cardOn : cardOff}`} aria-pressed={tipo === t}>
-              <span className="block text-lg font-bold">{TIPO_LABEL[t]}</span>
-              <span className="mt-1 block text-sm text-zinc-400">{TIPO_DESC[t]}</span>
+          {PERFILES.map((p) => (
+            <button key={p} type="button" onClick={() => setPerfil(p)} className={`${cardBase} ${perfil === p ? cardOn : cardOff}`} aria-pressed={perfil === p}>
+              <span className="block text-lg font-bold">{PERFIL_LABEL[p]}</span>
+              <span className="mt-1 block text-sm text-zinc-400">{PERFIL_DESC[p]}</span>
             </button>
           ))}
         </div>
-        {err('tipo') && <p className="mt-2 text-sm text-red-400">{err('tipo')}</p>}
+        {err('perfil') && <p className="mt-2 text-sm text-red-400">{err('perfil')}</p>}
+        {perfil === 'alumno' && (
+          <div className="mt-4 max-w-sm">
+            <Field label="¿Cuánto tiempo llevas entrenando en RFM?" error={err('tiempo_entrenando')}>
+              <input className={inputCls} value={g.tiempo_entrenando} onChange={(e) => upd('tiempo_entrenando', e.target.value)} placeholder="Ej. 8 meses" />
+            </Field>
+          </div>
+        )}
       </Section>
 
-      <Section n={2} title="Motivo de la solicitud">
-        <p className="mb-3 text-sm text-zinc-400">Puedes elegir uno o ambos.</p>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {MOTIVOS_BECA.map((m) => (
-            <button key={m} type="button" onClick={() => toggleMotivo(m)} className={`${cardBase} ${motivos.includes(m) ? cardOn : cardOff}`} aria-pressed={motivos.includes(m)}>
-              <span className="block text-lg font-bold">{MOTIVO_LABEL[m]}</span>
-              <span className="mt-1 block text-sm text-zinc-400">{MOTIVO_DESC[m]}</span>
-            </button>
-          ))}
-        </div>
-        {err('motivos') && <p className="mt-2 text-sm text-red-400">{err('motivos')}</p>}
-      </Section>
-
-      <Section n={3} title="Datos personales">
+      <Section n={++n} title="Datos personales">
         <div className="grid gap-4 md:grid-cols-2">
           <div className="md:col-span-2">
             <Field label="Nombre completo" required error={err('nombre')}>
@@ -236,100 +231,92 @@ export default function BecasForm({ disciplinas, filiales }: { disciplinas: stri
               <input className={inputCls} value={g.tutor_nombre} onChange={(e) => upd('tutor_nombre', e.target.value)} />
             </Field>
           )}
-        </div>
-      </Section>
-
-      <Section n={4} title="Entrenamiento">
-        <div className="grid gap-4 md:grid-cols-2">
           <Field label="Filial" required error={err('filial')}>
             <select className={inputCls} value={g.filial} onChange={(e) => upd('filial', e.target.value)}>
               <option value="">Selecciona…</option>
               {filiales.map((f) => <option key={f}>{f}</option>)}
             </select>
           </Field>
-          <Field label="Disciplina" required error={err('disciplina')}>
+          <Field label="Disciplina que más te motiva" required error={err('disciplina')} hint="El Plan #RFM incluye todas las disciplinas">
             <select className={inputCls} value={g.disciplina} onChange={(e) => upd('disciplina', e.target.value)}>
               <option value="">Selecciona…</option>
               {disciplinas.map((d) => <option key={d}>{d}</option>)}
             </select>
           </Field>
-          <div>
-            <span className="mb-1 block text-sm font-semibold text-zinc-200">¿Ya entrenas en Real Fighters? <span className="text-red-500">*</span></span>
-            <div className="grid grid-cols-2 gap-3">
-              {(['si', 'no'] as const).map((v) => (
-                <button key={v} type="button" onClick={() => upd('es_alumno', v)} className={`${cardBase} py-3 text-center font-bold ${g.es_alumno === v ? cardOn : cardOff}`}>
-                  {v === 'si' ? 'Sí' : 'No'}
-                </button>
-              ))}
-            </div>
-            {err('es_alumno') && <span className="mt-1 block text-sm text-red-400">{err('es_alumno')}</span>}
-          </div>
-          <Field label="¿Cuánto tiempo llevas entrenando?" error={err('tiempo_entrenando')}>
-            <input className={inputCls} value={g.tiempo_entrenando} onChange={(e) => upd('tiempo_entrenando', e.target.value)} placeholder="Ej. 2 años" />
-          </Field>
         </div>
       </Section>
 
-      {(motivos.length > 0) && (
-        <Section n={5} title="Información de soporte">
-          <div className="space-y-6">
-            {motivos.includes('socioeconomico') && (
-              <div className="space-y-4">
-                <h3 className="text-xl text-red-500">Situación socioeconómica</h3>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <Field label="Ocupación" error={err('socio.ocupacion')}>
-                    <input className={inputCls} value={socio.ocupacion} onChange={(e) => setSocio({ ...socio, ocupacion: e.target.value })} placeholder="Estudiante, empleado, etc." />
-                  </Field>
-                  <Field label="Personas que dependen económicamente de ti" error={err('socio.dependientes')}>
-                    <input className={inputCls} inputMode="numeric" value={socio.dependientes} onChange={(e) => setSocio({ ...socio, dependientes: e.target.value.replace(/\D/g, '').slice(0, 2) })} />
-                  </Field>
-                  <div className="md:col-span-2">
-                    <Field label="Ingreso mensual aproximado del hogar" required error={err('socio.ingreso_rango')}>
-                      <select className={inputCls} value={socio.ingreso_rango} onChange={(e) => setSocio({ ...socio, ingreso_rango: e.target.value })}>
-                        <option value="">Selecciona…</option>
-                        {RANGOS_INGRESO.map((r) => <option key={r} value={r}>{INGRESO_LABEL[r]}</option>)}
-                      </select>
-                    </Field>
-                  </div>
-                  <div className="md:col-span-2">
-                    <Field label="Describe tu situación" required error={err('socio.situacion')}>
-                      <textarea className={inputCls} rows={3} value={socio.situacion} onChange={(e) => setSocio({ ...socio, situacion: e.target.value })} />
-                    </Field>
-                  </div>
-                </div>
-              </div>
-            )}
-            {motivos.includes('desempeno') && (
-              <div className="space-y-4">
-                <h3 className="text-xl text-red-500">Desempeño deportivo</h3>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <Field label="Récord (G-P-E)" error={err('desempeno.record')}>
-                    <input className={inputCls} value={desemp.record} onChange={(e) => setDesemp({ ...desemp, record: e.target.value })} placeholder="Ej. 5-1-0" />
-                  </Field>
-                  <Field label="Link (Tapology, video, redes)" error={err('desempeno.link')}>
-                    <input className={inputCls} type="url" inputMode="url" value={desemp.link} onChange={(e) => setDesemp({ ...desemp, link: e.target.value })} placeholder="https://" />
-                  </Field>
-                  <div className="md:col-span-2">
-                    <Field label="Logros, torneos y campeonatos" error={err('desempeno.logros')}>
-                      <textarea className={inputCls} rows={3} value={desemp.logros} onChange={(e) => setDesemp({ ...desemp, logros: e.target.value })} />
-                    </Field>
-                  </div>
-                </div>
-              </div>
-            )}
+      <Section n={++n} title="Rendimiento escolar">
+        <div className="grid gap-4 md:grid-cols-2">
+          <Field label="Nivel educativo" required error={err('escolar.nivel_educativo')}>
+            <select className={inputCls} value={esc.nivel_educativo} onChange={(e) => updE('nivel_educativo', e.target.value)}>
+              <option value="">Selecciona…</option>
+              {NIVELES.map((l) => <option key={l} value={l}>{NIVEL_LABEL[l]}</option>)}
+            </select>
+          </Field>
+          <Field label="Grado o semestre" required error={err('escolar.grado')}>
+            <input className={inputCls} value={esc.grado} onChange={(e) => updE('grado', e.target.value)} placeholder="Ej. 2° de secundaria, 5° semestre" />
+          </Field>
+          <Field label="Escuela" error={err('escolar.escuela')}>
+            <input className={inputCls} value={esc.escuela} onChange={(e) => updE('escuela', e.target.value)} />
+          </Field>
+          <Field label="Promedio reciente" required error={err('escolar.promedio')} hint="Escala de 0 a 10">
+            <input className={inputCls} inputMode="decimal" value={esc.promedio} onChange={(e) => updE('promedio', e.target.value.replace(/[^\d.]/g, '').slice(0, 5))} placeholder="Ej. 8.7" />
+          </Field>
+          <div className="md:col-span-2">
+            <Field label="¿Qué esfuerzo o mejora escolar quieres destacar?" required error={err('escolar.esfuerzo')} hint="Una materia que sacaste adelante, constancia, un reconocimiento, cómo mejoraste…">
+              <textarea className={inputCls} rows={4} maxLength={1500} value={esc.esfuerzo} onChange={(e) => updE('esfuerzo', e.target.value)} />
+            </Field>
           </div>
-        </Section>
-      )}
+        </div>
+      </Section>
 
-      <Section n={motivos.length ? 6 : 5} title="¿Por qué mereces la beca?">
-        <Field label="Exposición de motivos" required error={err('exposicion')} hint={`${exposicion.trim().length}/2000 · mínimo 50 caracteres`}>
-          <textarea className={inputCls} rows={5} maxLength={2000} value={exposicion} onChange={(e) => setExposicion(e.target.value)} />
+      <Section n={++n} title="Situación socioeconómica">
+        <span className="mb-2 block text-sm font-semibold text-zinc-200">
+          ¿Tu situación socioeconómica es parte del motivo de tu solicitud? <span className="text-red-500">*</span>
+        </span>
+        <div className="grid max-w-sm grid-cols-2 gap-3">
+          {(['si', 'no'] as const).map((v) => (
+            <button key={v} type="button" onClick={() => setSocioSi(v)} className={`${cardBase} py-3 text-center font-bold ${socioSi === v ? cardOn : cardOff}`}>
+              {v === 'si' ? 'Sí' : 'No'}
+            </button>
+          ))}
+        </div>
+        {err('socioSi') && <p className="mt-2 text-sm text-red-400">{err('socioSi')}</p>}
+        {socioSi === 'si' && (
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <Field label="Ocupación de quien sostiene el hogar" error={err('socio.ocupacion')}>
+              <input className={inputCls} value={socio.ocupacion} onChange={(e) => setSocio({ ...socio, ocupacion: e.target.value })} />
+            </Field>
+            <Field label="Personas que dependen de ese ingreso" error={err('socio.dependientes')}>
+              <input className={inputCls} inputMode="numeric" value={socio.dependientes} onChange={(e) => setSocio({ ...socio, dependientes: e.target.value.replace(/\D/g, '').slice(0, 2) })} />
+            </Field>
+            <div className="md:col-span-2">
+              <Field label="Ingreso mensual aproximado del hogar" required error={err('socio.ingreso_rango')}>
+                <select className={inputCls} value={socio.ingreso_rango} onChange={(e) => setSocio({ ...socio, ingreso_rango: e.target.value })}>
+                  <option value="">Selecciona…</option>
+                  {RANGOS_INGRESO.map((r) => <option key={r} value={r}>{INGRESO_LABEL[r]}</option>)}
+                </select>
+              </Field>
+            </div>
+            <div className="md:col-span-2">
+              <Field label="Describe brevemente tu situación" required error={err('socio.situacion')}>
+                <textarea className={inputCls} rows={3} maxLength={1500} value={socio.situacion} onChange={(e) => setSocio({ ...socio, situacion: e.target.value })} />
+              </Field>
+            </div>
+          </div>
+        )}
+      </Section>
+
+      <Section n={++n} title="Motivación personal">
+        <Field label="¿Por qué quieres entrenar y crecer en RFM?" required error={err('motivacion')} hint={`${motivacion.trim().length}/2000 · mínimo 50 caracteres`}>
+          <textarea className={inputCls} rows={5} maxLength={2000} value={motivacion} onChange={(e) => setMotivacion(e.target.value)} />
         </Field>
       </Section>
 
-      <Section n={motivos.length ? 7 : 6} title="Comprobantes (opcional)">
+      <Section n={++n} title="Comprobantes escolares (opcional)">
         <p className="mb-3 text-sm text-zinc-400">
-          Comprobante de ingresos o de domicilio, constancias, fotos de medallas, etc. PDF, JPG o PNG, máximo {DOC_MAX_FILES} archivos de 5 MB.
+          Boleta, constancia de estudios o reconocimientos. Son confidenciales: solo los ve el Comité. PDF, JPG o PNG, máximo {DOC_MAX_FILES} archivos de 5 MB.
         </p>
         <label className={`flex cursor-pointer items-center justify-center rounded-xl border-2 border-dashed px-4 py-6 text-center ${files.length >= DOC_MAX_FILES ? 'pointer-events-none border-zinc-800 text-zinc-600' : 'border-zinc-700 text-zinc-300 hover:border-red-600'}`}>
           <input type="file" className="sr-only" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" onChange={(e) => { addFiles(e.target.files); e.target.value = '' }} />
@@ -352,13 +339,13 @@ export default function BecasForm({ disciplinas, filiales }: { disciplinas: stri
         <label className="flex items-start gap-3 text-sm text-zinc-300">
           <input type="checkbox" className="mt-1 h-5 w-5 accent-red-600" checked={privacidad} onChange={(e) => setPrivacidad(e.target.checked)} />
           <span>
-            He leído y acepto el <Link href="/aviso-privacidad" target="_blank" className="text-red-500 underline">aviso de privacidad</Link>, incluido el tratamiento de mis datos socioeconómicos para evaluar esta solicitud.
+            He leído y acepto el <Link href="/aviso-privacidad" target="_blank" className="text-red-500 underline">aviso de privacidad</Link>, incluido el tratamiento de mis datos escolares y socioeconómicos para evaluar esta solicitud.
           </span>
         </label>
         {err('acepta_privacidad') && <p className="text-sm text-red-400">{err('acepta_privacidad')}</p>}
         <label className="flex items-start gap-3 text-sm text-zinc-300">
           <input type="checkbox" className="mt-1 h-5 w-5 accent-red-600" checked={veracidad} onChange={(e) => setVeracidad(e.target.checked)} />
-          <span>Declaro que la información proporcionada es verídica. Real Fighters puede solicitar documentos adicionales para verificarla.</span>
+          <span>Declaro que la información proporcionada es verídica. RFM puede solicitar documentos adicionales para verificarla.</span>
         </label>
         {err('declara_veracidad') && <p className="text-sm text-red-400">{err('declara_veracidad')}</p>}
       </div>

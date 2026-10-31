@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { supabaseAdmin, hasServiceRole } from '@/lib/supabase-admin'
 import { requireAdmin } from '@/lib/require-admin'
-import { DOCS_BUCKET, ESTATUS_BECA } from '@/lib/becas'
+import { DOCS_BUCKET, ESTATUS_BECA, PORCENTAJES } from '@/lib/becas'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,11 +36,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   return NextResponse.json({ solicitud: sol, documentos })
 }
 
-const patchSchema = z.object({
-  estatus: z.enum(ESTATUS_BECA),
-  porcentaje_beca: z.number().int().min(0).max(100).nullable(),
-  notas_admin: z.string().trim().max(2000).nullable(),
-})
+const patchSchema = z
+  .object({
+    estatus: z.enum(ESTATUS_BECA),
+    porcentaje_beca: z.number().int().refine((p) => (PORCENTAJES as readonly number[]).includes(p), 'Porcentaje inválido').nullable(),
+    notas_admin: z.string().trim().max(2000).nullable(),
+  })
+  .refine((d) => d.estatus !== 'aprobada' || d.porcentaje_beca != null, { message: 'Elige el porcentaje de la beca aprobada' })
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!hasServiceRole) return NextResponse.json({ error: 'Falta configurar SUPABASE_SERVICE_ROLE_KEY en el servidor' }, { status: 503 })

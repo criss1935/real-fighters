@@ -3,11 +3,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import {
+  CUPOS,
   ESTATUS_BECA,
   ESTATUS_LABEL,
   INGRESO_LABEL,
-  MOTIVO_LABEL,
-  TIPO_LABEL,
+  NIVEL_LABEL,
+  NIVELES,
+  PERFIL_LABEL,
+  PORCENTAJES,
   estadoConvocatoria,
   folioBeca,
   parseBecasConfig,
@@ -15,12 +18,13 @@ import {
 } from '@/lib/becas'
 
 type Estatus = (typeof ESTATUS_BECA)[number]
+type Porcentaje = (typeof PORCENTAJES)[number]
 type Fila = {
   id: number
   created_at: string
   convocatoria: string
-  tipo: keyof typeof TIPO_LABEL
-  motivos: (keyof typeof MOTIVO_LABEL)[]
+  perfil: keyof typeof PERFIL_LABEL
+  motivos: string[]
   nombre: string
   telefono: string
   email: string | null
@@ -28,21 +32,24 @@ type Fila = {
   es_menor: boolean
   filial: string
   disciplina: string
-  es_alumno: boolean
+  nivel_educativo: keyof typeof NIVEL_LABEL
+  grado: string
+  promedio: number
   estatus: Estatus
-  porcentaje_beca: number | null
+  porcentaje_beca: Porcentaje | null
 }
 type Detalle = {
   solicitud: Fila & {
     tutor_nombre: string | null
     tiempo_entrenando: string | null
-    exposicion: string
+    escuela: string | null
+    motivacion: string
     notas_admin: string | null
     revisado_por: string | null
     revisado_at: string | null
     datos: {
+      esfuerzo_escolar: string | null
       socioeconomico: { ocupacion: string | null; dependientes: number | null; ingreso_rango: keyof typeof INGRESO_LABEL | null; situacion: string | null } | null
-      desempeno: { record: string | null; logros: string | null; link: string | null } | null
     }
   }
   documentos: { nombre: string; url: string | null }[]
@@ -55,6 +62,8 @@ const ESTATUS_CLS: Record<Estatus, string> = {
   rechazada: 'bg-red-100 text-red-700',
 }
 
+const esSocio = (r: Pick<Fila, 'motivos'>) => r.motivos.includes('socioeconomico')
+
 async function authHeader(): Promise<Record<string, string>> {
   const { data } = await supabase.auth.getSession()
   const token = data.session?.access_token
@@ -66,6 +75,12 @@ function csvCell(v: unknown) {
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
 }
 
+function contarAsignadas(rows: Fila[]) {
+  const c: Record<Porcentaje, number> = { 25: 0, 50: 0, 100: 0 }
+  for (const r of rows) if (r.estatus === 'aprobada' && r.porcentaje_beca) c[r.porcentaje_beca]++
+  return c
+}
+
 export default function BecasTab() {
   const [cfg, setCfg] = useState<BecasConfig | null>(null)
   const [cfgSaving, setCfgSaving] = useState(false)
@@ -74,9 +89,11 @@ export default function BecasTab() {
   const [rows, setRows] = useState<Fila[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [fTipo, setFTipo] = useState('')
-  const [fMotivo, setFMotivo] = useState('')
+  const [fPerfil, setFPerfil] = useState('')
+  const [fSocio, setFSocio] = useState('')
+  const [fNivel, setFNivel] = useState('')
   const [fEstatus, setFEstatus] = useState('')
+  const [orden, setOrden] = useState<'recientes' | 'promedio'>('recientes')
   const [q, setQ] = useState('')
   const [abierta, setAbierta] = useState<number | null>(null)
 
@@ -110,36 +127,35 @@ export default function BecasTab() {
     setCfgMsg(null)
     const { error } = await supabase.from('config').upsert({ key: 'becas', data: cfg, updated_at: new Date() }, { onConflict: 'key' })
     setCfgSaving(false)
-    if (error) { setCfgMsg(`No se pudo guardar: ${error.message}`); return }
-    setCfgMsg('Guardado. La página pública se actualiza en máximo 1 minuto.')
+    setCfgMsg(error ? `No se pudo guardar: ${error.message}` : 'Guardado. La página pública se actualiza en máximo 1 minuto.')
   }
 
   const filtradas = useMemo(() => {
     const s = q.trim().toLowerCase()
-    return rows.filter((r) =>
-      (!fTipo || r.tipo === fTipo) &&
-      (!fMotivo || r.motivos.includes(fMotivo as Fila['motivos'][number])) &&
+    const out = rows.filter((r) =>
+      (!fPerfil || r.perfil === fPerfil) &&
+      (!fSocio || (fSocio === 'si') === esSocio(r)) &&
+      (!fNivel || r.nivel_educativo === fNivel) &&
       (!fEstatus || r.estatus === fEstatus) &&
       (!s || r.nombre.toLowerCase().includes(s) || r.telefono.includes(s) || folioBeca(r.id).toLowerCase().includes(s))
     )
-  }, [rows, fTipo, fMotivo, fEstatus, q])
+    return orden === 'promedio' ? [...out].sort((a, b) => Number(b.promedio) - Number(a.promedio)) : out
+  }, [rows, fPerfil, fSocio, fNivel, fEstatus, orden, q])
 
-  const conteo = useMemo(() => {
-    const c = { total: rows.length, amateur: 0, profesional: 0, pendiente: 0, aprobada: 0 }
-    for (const r of rows) {
-      c[r.tipo]++
-      if (r.estatus === 'pendiente' || r.estatus === 'en_revision') c.pendiente++
-      if (r.estatus === 'aprobada') c.aprobada++
-    }
-    return c
-  }, [rows])
+  const asignadas = useMemo(() => contarAsignadas(rows), [rows])
+  const conteo = useMemo(() => ({
+    total: rows.length,
+    porRevisar: rows.filter((r) => r.estatus === 'pendiente' || r.estatus === 'en_revision').length,
+    alumnos: rows.filter((r) => r.perfil === 'alumno').length,
+    nuevos: rows.filter((r) => r.perfil === 'nuevo').length,
+  }), [rows])
 
   function exportarCSV() {
-    const head = ['Folio', 'Fecha', 'Tipo', 'Motivos', 'Nombre', 'Teléfono', 'Correo', 'Nacimiento', 'Menor', 'Filial', 'Disciplina', 'Alumno', 'Estatus', '% Beca']
+    const head = ['Folio', 'Fecha', 'Perfil', 'Socioeconómico', 'Nombre', 'Teléfono', 'Correo', 'Nacimiento', 'Menor', 'Filial', 'Disciplina', 'Nivel', 'Grado', 'Promedio', 'Estatus', '% Beca']
     const lines = filtradas.map((r) => [
-      folioBeca(r.id), r.created_at.slice(0, 10), TIPO_LABEL[r.tipo], r.motivos.map((m) => MOTIVO_LABEL[m]).join(' + '),
+      folioBeca(r.id), r.created_at.slice(0, 10), PERFIL_LABEL[r.perfil], esSocio(r) ? 'Sí' : 'No',
       r.nombre, r.telefono, r.email, r.fecha_nacimiento, r.es_menor ? 'Sí' : 'No', r.filial, r.disciplina,
-      r.es_alumno ? 'Sí' : 'No', ESTATUS_LABEL[r.estatus], r.porcentaje_beca ?? '',
+      NIVEL_LABEL[r.nivel_educativo], r.grado, r.promedio, ESTATUS_LABEL[r.estatus], r.porcentaje_beca ?? '',
     ].map(csvCell).join(','))
     const blob = new Blob(['﻿' + [head.join(','), ...lines].join('\n')], { type: 'text/csv;charset=utf-8' })
     const a = document.createElement('a')
@@ -154,7 +170,7 @@ export default function BecasTab() {
 
   return (
     <div className="space-y-6">
-      {/* Configuración de la convocatoria */}
+      {/* Configuración */}
       <form onSubmit={guardarConfig} className="rounded-lg border border-gray-200 bg-gray-50 p-4">
         <div className="mb-3 flex flex-wrap items-center gap-3">
           <h3 className="text-lg font-bold text-gray-900">Convocatoria</h3>
@@ -190,13 +206,12 @@ export default function BecasTab() {
       </form>
 
       {/* Resumen */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {[
           ['Solicitudes', conteo.total],
-          ['Amateur', conteo.amateur],
-          ['Profesional', conteo.profesional],
-          ['Por revisar', conteo.pendiente],
-          ['Aprobadas', conteo.aprobada],
+          ['Por revisar', conteo.porRevisar],
+          ['Ya entrenan', conteo.alumnos],
+          ['Quieren iniciar', conteo.nuevos],
         ].map(([l, v]) => (
           <div key={l} className="rounded-lg border border-gray-200 p-3">
             <p className="text-xs text-gray-500">{l}</p>
@@ -205,20 +220,46 @@ export default function BecasTab() {
         ))}
       </div>
 
+      {/* Cupos */}
+      <div className="grid grid-cols-3 gap-3">
+        {PORCENTAJES.map((p) => {
+          const lleno = asignadas[p] >= CUPOS[p]
+          const excedido = asignadas[p] > CUPOS[p]
+          return (
+            <div key={p} className={`rounded-lg border p-3 ${excedido ? 'border-red-300 bg-red-50' : lleno ? 'border-green-300 bg-green-50' : 'border-gray-200'}`}>
+              <p className="text-xs text-gray-500">Becas al {p}%</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {asignadas[p]}<span className="text-base font-normal text-gray-500"> / {CUPOS[p]}</span>
+              </p>
+              {excedido && <p className="text-xs text-red-700">Excede los cupos</p>}
+            </div>
+          )
+        })}
+      </div>
+
       {/* Filtros */}
       <div className="flex flex-wrap items-center gap-2">
         <input className={`${selCls} min-w-[200px] flex-1`} placeholder="Buscar nombre, teléfono o folio" value={q} onChange={(e) => setQ(e.target.value)} />
-        <select className={selCls} value={fTipo} onChange={(e) => setFTipo(e.target.value)}>
-          <option value="">Todos los tipos</option>
-          {Object.entries(TIPO_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+        <select className={selCls} value={fPerfil} onChange={(e) => setFPerfil(e.target.value)}>
+          <option value="">Alumnos y nuevos</option>
+          {Object.entries(PERFIL_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
-        <select className={selCls} value={fMotivo} onChange={(e) => setFMotivo(e.target.value)}>
-          <option value="">Todos los motivos</option>
-          {Object.entries(MOTIVO_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+        <select className={selCls} value={fSocio} onChange={(e) => setFSocio(e.target.value)}>
+          <option value="">Socioeconómico: todos</option>
+          <option value="si">Con motivo socioeconómico</option>
+          <option value="no">Sin motivo socioeconómico</option>
+        </select>
+        <select className={selCls} value={fNivel} onChange={(e) => setFNivel(e.target.value)}>
+          <option value="">Todos los niveles</option>
+          {NIVELES.map((k) => <option key={k} value={k}>{NIVEL_LABEL[k]}</option>)}
         </select>
         <select className={selCls} value={fEstatus} onChange={(e) => setFEstatus(e.target.value)}>
           <option value="">Todos los estatus</option>
           {ESTATUS_BECA.map((k) => <option key={k} value={k}>{ESTATUS_LABEL[k]}</option>)}
+        </select>
+        <select className={selCls} value={orden} onChange={(e) => setOrden(e.target.value as typeof orden)}>
+          <option value="recientes">Más recientes</option>
+          <option value="promedio">Mayor promedio</option>
         </select>
         <button type="button" onClick={cargar} className="rounded-lg border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50">Actualizar</button>
         <button type="button" onClick={exportarCSV} disabled={!filtradas.length} className="rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50">Exportar CSV</button>
@@ -238,8 +279,8 @@ export default function BecasTab() {
               <tr>
                 <th className="px-3 py-2">Folio</th>
                 <th className="px-3 py-2">Nombre</th>
-                <th className="px-3 py-2">Tipo</th>
-                <th className="px-3 py-2">Motivo</th>
+                <th className="px-3 py-2">Escolaridad</th>
+                <th className="px-3 py-2">Promedio</th>
                 <th className="px-3 py-2">Filial</th>
                 <th className="px-3 py-2">Fecha</th>
                 <th className="px-3 py-2">Estatus</th>
@@ -251,11 +292,14 @@ export default function BecasTab() {
                   <td className="px-3 py-2 font-mono text-xs">{folioBeca(r.id)}</td>
                   <td className="px-3 py-2">
                     <span className="font-medium">{r.nombre}</span>
-                    {r.es_alumno && <span className="ml-2 rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">ALUMNO</span>}
+                    <span className={`ml-2 rounded px-1.5 py-0.5 text-[10px] font-semibold ${r.perfil === 'alumno' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>
+                      {r.perfil === 'alumno' ? 'ALUMNO' : 'NUEVO'}
+                    </span>
+                    {esSocio(r) && <span className="ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">SOCIOECON.</span>}
                     {r.es_menor && <span className="ml-1 rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-semibold text-purple-700">MENOR</span>}
                   </td>
-                  <td className="px-3 py-2">{TIPO_LABEL[r.tipo]}</td>
-                  <td className="px-3 py-2">{r.motivos.map((m) => MOTIVO_LABEL[m]).join(' + ')}</td>
+                  <td className="px-3 py-2">{NIVEL_LABEL[r.nivel_educativo]} · {r.grado}</td>
+                  <td className="px-3 py-2 font-semibold">{Number(r.promedio).toFixed(1)}</td>
                   <td className="px-3 py-2">{r.filial}</td>
                   <td className="whitespace-nowrap px-3 py-2">{new Date(r.created_at).toLocaleDateString('es-MX')}</td>
                   <td className="px-3 py-2">
@@ -270,7 +314,9 @@ export default function BecasTab() {
         </div>
       )}
 
-      {abierta && <BecaModal id={abierta} onClose={() => setAbierta(null)} onSaved={() => { setAbierta(null); cargar() }} />}
+      {abierta && (
+        <BecaModal id={abierta} asignadas={asignadas} onClose={() => setAbierta(null)} onSaved={() => { setAbierta(null); cargar() }} />
+      )}
     </div>
   )
 }
@@ -285,11 +331,11 @@ function Dato({ label, value }: { label: string; value: React.ReactNode }) {
   )
 }
 
-function BecaModal({ id, onClose, onSaved }: { id: number; onClose: () => void; onSaved: () => void }) {
+function BecaModal({ id, asignadas, onClose, onSaved }: { id: number; asignadas: Record<Porcentaje, number>; onClose: () => void; onSaved: () => void }) {
   const [d, setD] = useState<Detalle | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const [estatus, setEstatus] = useState<Estatus>('pendiente')
-  const [pct, setPct] = useState('')
+  const [pct, setPct] = useState<Porcentaje | ''>('')
   const [notas, setNotas] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -300,18 +346,26 @@ function BecaModal({ id, onClose, onSaved }: { id: number; onClose: () => void; 
       if (!r.ok) { setErr(j.error || 'No se pudo cargar'); return }
       setD(j)
       setEstatus(j.solicitud.estatus)
-      setPct(j.solicitud.porcentaje_beca != null ? String(j.solicitud.porcentaje_beca) : '')
+      setPct(j.solicitud.porcentaje_beca ?? '')
       setNotas(j.solicitud.notas_admin || '')
     })()
   }, [id])
 
+  // Cupos libres sin contar la asignación actual de esta misma solicitud
+  const libres = (p: Porcentaje) => {
+    const propia = d?.solicitud.estatus === 'aprobada' && d.solicitud.porcentaje_beca === p ? 1 : 0
+    return CUPOS[p] - (asignadas[p] - propia)
+  }
+
   async function guardar() {
+    if (estatus === 'aprobada' && !pct) { setErr('Elige el porcentaje de la beca'); return }
+    if (estatus === 'aprobada' && pct && libres(pct) <= 0 && !confirm(`Ya no hay cupos al ${pct}%. ¿Aprobar de todos modos?`)) return
     setSaving(true)
     setErr(null)
     const r = await fetch(`/api/admin/becas/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
-      body: JSON.stringify({ estatus, porcentaje_beca: estatus === 'aprobada' && pct !== '' ? Number(pct) : null, notas_admin: notas || null }),
+      body: JSON.stringify({ estatus, porcentaje_beca: estatus === 'aprobada' ? pct || null : null, notas_admin: notas || null }),
     })
     const j = await r.json().catch(() => ({}))
     setSaving(false)
@@ -321,8 +375,6 @@ function BecaModal({ id, onClose, onSaved }: { id: number; onClose: () => void; 
 
   const s = d?.solicitud
   const socio = s?.datos?.socioeconomico
-  const desemp = s?.datos?.desempeno
-  const wa = s ? `https://wa.me/52${s.telefono}` : '#'
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center sm:p-4" onClick={onClose}>
@@ -331,7 +383,7 @@ function BecaModal({ id, onClose, onSaved }: { id: number; onClose: () => void; 
           <div>
             <p className="font-mono text-xs text-gray-500">{folioBeca(id)}</p>
             <h3 className="text-2xl font-bold">{s?.nombre || 'Cargando…'}</h3>
-            {s && <p className="text-sm text-gray-600">{TIPO_LABEL[s.tipo]} · {s.motivos.map((m) => MOTIVO_LABEL[m]).join(' + ')}</p>}
+            {s && <p className="text-sm text-gray-600">{PERFIL_LABEL[s.perfil]}{esSocio(s) ? ' · con motivo socioeconómico' : ''}</p>}
           </div>
           <button onClick={onClose} className="rounded-lg px-3 py-1 text-2xl leading-none text-gray-500 hover:bg-gray-100" aria-label="Cerrar">×</button>
         </div>
@@ -341,21 +393,30 @@ function BecaModal({ id, onClose, onSaved }: { id: number; onClose: () => void; 
         {s && (
           <div className="space-y-5">
             <dl className="grid gap-3 sm:grid-cols-2">
-              <Dato label="Teléfono" value={<a href={wa} target="_blank" className="text-green-700 underline">{s.telefono}</a>} />
+              <Dato label="Teléfono" value={<a href={`https://wa.me/52${s.telefono}`} target="_blank" rel="noopener noreferrer" className="text-green-700 underline">{s.telefono}</a>} />
               <Dato label="Correo" value={s.email} />
               <Dato label="Nacimiento" value={`${s.fecha_nacimiento}${s.es_menor ? ' (menor de edad)' : ''}`} />
               <Dato label="Tutor" value={s.tutor_nombre} />
               <Dato label="Filial / disciplina" value={`${s.filial} · ${s.disciplina}`} />
-              <Dato label="¿Ya es alumno?" value={s.es_alumno ? 'Sí' : 'No'} />
               <Dato label="Tiempo entrenando" value={s.tiempo_entrenando} />
               <Dato label="Enviada" value={new Date(s.created_at).toLocaleString('es-MX')} />
             </dl>
 
+            <div className="rounded-lg border border-gray-200 p-4">
+              <h4 className="mb-2 font-bold text-red-600">Rendimiento escolar</h4>
+              <dl className="grid gap-3 sm:grid-cols-2">
+                <Dato label="Nivel / grado" value={`${NIVEL_LABEL[s.nivel_educativo]} · ${s.grado}`} />
+                <Dato label="Promedio" value={Number(s.promedio).toFixed(2)} />
+                <Dato label="Escuela" value={s.escuela} />
+                <div className="sm:col-span-2"><Dato label="Esfuerzo o mejora a destacar" value={s.datos?.esfuerzo_escolar} /></div>
+              </dl>
+            </div>
+
             {socio && (
               <div className="rounded-lg border border-gray-200 p-4">
-                <h4 className="mb-2 font-bold text-red-600">Socioeconómico</h4>
+                <h4 className="mb-2 font-bold text-red-600">Situación socioeconómica</h4>
                 <dl className="grid gap-3 sm:grid-cols-2">
-                  <Dato label="Ocupación" value={socio.ocupacion} />
+                  <Dato label="Ocupación (sostén del hogar)" value={socio.ocupacion} />
                   <Dato label="Dependientes" value={socio.dependientes} />
                   <Dato label="Ingreso del hogar" value={socio.ingreso_rango ? INGRESO_LABEL[socio.ingreso_rango] : null} />
                   <div className="sm:col-span-2"><Dato label="Situación" value={socio.situacion} /></div>
@@ -363,21 +424,10 @@ function BecaModal({ id, onClose, onSaved }: { id: number; onClose: () => void; 
               </div>
             )}
 
-            {desemp && (
-              <div className="rounded-lg border border-gray-200 p-4">
-                <h4 className="mb-2 font-bold text-red-600">Desempeño</h4>
-                <dl className="grid gap-3 sm:grid-cols-2">
-                  <Dato label="Récord" value={desemp.record} />
-                  <Dato label="Link" value={desemp.link ? <a href={desemp.link} target="_blank" rel="noopener noreferrer" className="break-all text-blue-700 underline">{desemp.link}</a> : null} />
-                  <div className="sm:col-span-2"><Dato label="Logros" value={desemp.logros} /></div>
-                </dl>
-              </div>
-            )}
-
-            <Dato label="Exposición de motivos" value={s.exposicion} />
+            <Dato label="Motivación personal" value={s.motivacion} />
 
             <div>
-              <p className="text-xs uppercase text-gray-500">Comprobantes</p>
+              <p className="text-xs uppercase text-gray-500">Comprobantes escolares</p>
               {d.documentos.length ? (
                 <ul className="mt-1 space-y-1">
                   {d.documentos.map((doc) => (
@@ -392,7 +442,7 @@ function BecaModal({ id, onClose, onSaved }: { id: number; onClose: () => void; 
             </div>
 
             <div className="space-y-3 rounded-lg bg-gray-50 p-4">
-              <h4 className="font-bold">Dictamen</h4>
+              <h4 className="font-bold">Dictamen del Comité</h4>
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="text-sm">Estatus
                   <select className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2" value={estatus} onChange={(e) => setEstatus(e.target.value as Estatus)}>
@@ -400,8 +450,15 @@ function BecaModal({ id, onClose, onSaved }: { id: number; onClose: () => void; 
                   </select>
                 </label>
                 {estatus === 'aprobada' && (
-                  <label className="text-sm">% de beca
-                    <input className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2" inputMode="numeric" value={pct} onChange={(e) => setPct(e.target.value.replace(/\D/g, '').slice(0, 3))} placeholder="Ej. 50" />
+                  <label className="text-sm">Porcentaje de beca
+                    <select className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2" value={pct} onChange={(e) => setPct(e.target.value ? (Number(e.target.value) as Porcentaje) : '')}>
+                      <option value="">Selecciona…</option>
+                      {PORCENTAJES.map((p) => (
+                        <option key={p} value={p}>
+                          {p}% · {Math.max(0, libres(p))} de {CUPOS[p]} disponibles
+                        </option>
+                      ))}
+                    </select>
                   </label>
                 )}
               </div>
@@ -409,7 +466,7 @@ function BecaModal({ id, onClose, onSaved }: { id: number; onClose: () => void; 
                 <textarea className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2" rows={3} value={notas} onChange={(e) => setNotas(e.target.value)} />
               </label>
               {s.revisado_at && <p className="text-xs text-gray-500">Última revisión: {s.revisado_por} · {new Date(s.revisado_at).toLocaleString('es-MX')}</p>}
-              <button onClick={guardar} disabled={saving || (estatus === 'aprobada' && Number(pct) > 100)} className="w-full rounded-lg bg-red-600 py-2.5 font-semibold text-white hover:bg-red-700 disabled:opacity-50">
+              <button onClick={guardar} disabled={saving} className="w-full rounded-lg bg-red-600 py-2.5 font-semibold text-white hover:bg-red-700 disabled:opacity-50">
                 {saving ? 'Guardando…' : 'Guardar dictamen'}
               </button>
             </div>

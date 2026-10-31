@@ -41,15 +41,13 @@ export async function POST(req: NextRequest) {
   }
   const d = parsed.data
   const menor = esMenor(d.fecha_nacimiento)
-  const socio = d.motivos.includes('socioeconomico')
-  const desemp = d.motivos.includes('desempeno')
 
   const { data: row, error } = await supabaseAdmin
     .from('beca_solicitudes')
     .insert({
       convocatoria: cfg.convocatoria,
-      tipo: d.tipo,
-      motivos: d.motivos,
+      perfil: d.perfil,
+      motivos: d.socioeconomico ? ['escolar', 'socioeconomico'] : ['escolar'],
       nombre: d.nombre,
       telefono: d.telefono.replace(/\D/g, '').slice(-10),
       email: d.email,
@@ -58,13 +56,16 @@ export async function POST(req: NextRequest) {
       tutor_nombre: menor ? d.tutor_nombre : null,
       filial: d.filial,
       disciplina: d.disciplina,
-      es_alumno: d.es_alumno,
-      tiempo_entrenando: d.tiempo_entrenando,
+      tiempo_entrenando: d.perfil === 'alumno' ? d.tiempo_entrenando : null,
+      nivel_educativo: d.escolar.nivel_educativo,
+      escuela: d.escolar.escuela,
+      grado: d.escolar.grado,
+      promedio: Math.round(d.escolar.promedio * 100) / 100,
       datos: {
-        socioeconomico: socio ? d.socio : null,
-        desempeno: desemp ? d.desempeno : null,
+        esfuerzo_escolar: d.escolar.esfuerzo,
+        socioeconomico: d.socioeconomico ? d.socio : null,
       },
-      exposicion: d.exposicion,
+      motivacion: d.motivacion,
       ip: ip !== 'unknown' ? ip : null,
       user_agent: req.headers.get('user-agent')?.slice(0, 300) || null,
     })

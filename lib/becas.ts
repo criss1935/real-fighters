@@ -1,24 +1,37 @@
 import { z } from 'zod'
 import { esMenor } from '@/lib/inscripcion-schema'
 
-export const TIPOS_BECA = ['amateur', 'profesional'] as const
-export const MOTIVOS_BECA = ['socioeconomico', 'desempeno'] as const
+export const PERFILES = ['alumno', 'nuevo'] as const
+export const MOTIVOS_BECA = ['escolar', 'socioeconomico'] as const
 export const ESTATUS_BECA = ['pendiente', 'en_revision', 'aprobada', 'rechazada'] as const
+export const NIVELES = ['primaria', 'secundaria', 'preparatoria', 'universidad', 'posgrado', 'otro'] as const
 export const RANGOS_INGRESO = ['menos_5k', '5k_10k', '10k_20k', '20k_35k', 'mas_35k'] as const
+export const PORCENTAJES = [25, 50, 100] as const
 
-export const TIPO_LABEL: Record<(typeof TIPOS_BECA)[number], string> = {
-  amateur: 'Beca Amateur',
-  profesional: 'Beca Profesional',
+/** Becas disponibles por porcentaje (10 en total). */
+export const CUPOS: Record<(typeof PORCENTAJES)[number], number> = { 25: 4, 50: 4, 100: 2 }
+
+export const PERFIL_LABEL: Record<(typeof PERFILES)[number], string> = {
+  alumno: 'Ya entreno en RFM',
+  nuevo: 'Quiero iniciar',
 }
 export const MOTIVO_LABEL: Record<(typeof MOTIVOS_BECA)[number], string> = {
+  escolar: 'Rendimiento escolar',
   socioeconomico: 'Situación socioeconómica',
-  desempeno: 'Desempeño deportivo',
 }
 export const ESTATUS_LABEL: Record<(typeof ESTATUS_BECA)[number], string> = {
   pendiente: 'Pendiente',
   en_revision: 'En revisión',
   aprobada: 'Aprobada',
   rechazada: 'Rechazada',
+}
+export const NIVEL_LABEL: Record<(typeof NIVELES)[number], string> = {
+  primaria: 'Primaria',
+  secundaria: 'Secundaria',
+  preparatoria: 'Preparatoria / Bachillerato',
+  universidad: 'Universidad',
+  posgrado: 'Posgrado',
+  otro: 'Otro',
 }
 export const INGRESO_LABEL: Record<(typeof RANGOS_INGRESO)[number], string> = {
   menos_5k: 'Menos de $5,000',
@@ -39,7 +52,7 @@ export const DEFAULT_BECAS_CONFIG: BecasConfig = {
   activa: false,
   convocatoria: '2026-11',
   abre_en: '2026-11-01',
-  cierra_en: '2026-11-10',
+  cierra_en: '2026-11-30',
 }
 
 /** Fecha de hoy (YYYY-MM-DD) en hora de CDMX. */
@@ -49,7 +62,7 @@ export function hoyCDMX(now = new Date()): string {
 
 export type EstadoConvocatoria = 'abierta' | 'proxima' | 'cerrada'
 
-/** Ventana inclusiva: abre a las 00:00 del día de apertura y cierra al final del día de cierre (CDMX). */
+/** Ventana inclusiva: abre a las 00:00 del día de apertura y cierra a las 23:59 del día de cierre (CDMX). */
 export function estadoConvocatoria(cfg: BecasConfig, now = new Date()): EstadoConvocatoria {
   if (!cfg.activa) return 'cerrada'
   const hoy = hoyCDMX(now)
@@ -69,6 +82,12 @@ export function parseBecasConfig(raw: unknown): BecasConfig {
   }
 }
 
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+export function fechaLarga(iso: string, conAnio = true) {
+  const [y, m, d] = iso.split('-').map(Number)
+  return `${d} de ${MESES[m - 1]}${conAnio ? ` de ${y}` : ''}`
+}
+
 const opt = (max = 500) => z.string().trim().max(max).optional().transform((v) => (v ? v : null))
 const telefono = z.string().trim().regex(/^[\d\s+()-]{10,20}$/, 'Teléfono inválido (10 dígitos)')
 
@@ -80,8 +99,8 @@ export const docMetaSchema = z.object({
 
 export const becaSchema = z
   .object({
-    tipo: z.enum(TIPOS_BECA, { message: 'Elige el tipo de beca' }),
-    motivos: z.array(z.enum(MOTIVOS_BECA)).min(1, 'Elige al menos un motivo').max(2),
+    perfil: z.enum(PERFILES, { message: 'Indica si ya entrenas en RFM o quieres iniciar' }),
+    socioeconomico: z.boolean(),
     nombre: z.string().trim().min(3, 'Nombre muy corto').max(120),
     telefono,
     email: z.string().trim().email('Correo inválido').max(120).optional().or(z.literal('')).transform((v) => (v ? v.toLowerCase() : null)),
@@ -89,20 +108,21 @@ export const becaSchema = z
     tutor_nombre: opt(120),
     filial: z.string().trim().min(1, 'Elige una filial').max(80),
     disciplina: z.string().trim().min(1, 'Elige una disciplina').max(60),
-    es_alumno: z.boolean(),
     tiempo_entrenando: opt(60),
+    escolar: z.object({
+      nivel_educativo: z.enum(NIVELES, { message: 'Elige tu nivel educativo' }),
+      escuela: opt(150),
+      grado: z.string().trim().min(1, 'Indica tu grado o semestre').max(60),
+      promedio: z.number({ message: 'Indica tu promedio' }).min(0, 'Promedio en escala de 0 a 10').max(10, 'Promedio en escala de 0 a 10'),
+      esfuerzo: z.string().trim().min(30, 'Cuéntanos un poco más (mínimo 30 caracteres)').max(1500),
+    }),
     socio: z.object({
       ocupacion: opt(120),
       dependientes: z.number().int().min(0).max(20).nullable(),
       ingreso_rango: z.enum(RANGOS_INGRESO).nullable(),
       situacion: opt(1500),
     }),
-    desempeno: z.object({
-      record: opt(120),
-      logros: opt(1500),
-      link: z.string().trim().url('Link inválido').max(300).optional().or(z.literal('')).transform((v) => (v ? v : null)),
-    }),
-    exposicion: z.string().trim().min(50, 'Cuéntanos un poco más (mínimo 50 caracteres)').max(2000),
+    motivacion: z.string().trim().min(50, 'Cuéntanos un poco más (mínimo 50 caracteres)').max(2000),
     documentos: z.array(docMetaSchema).max(DOC_MAX_FILES, `Máximo ${DOC_MAX_FILES} archivos`),
     acepta_privacidad: z.literal(true, { message: 'Debes aceptar el aviso de privacidad' }),
     declara_veracidad: z.literal(true, { message: 'Debes declarar que la información es verídica' }),
@@ -112,14 +132,11 @@ export const becaSchema = z
     if (isNaN(nac.getTime()) || nac > new Date() || nac.getFullYear() < 1940) {
       ctx.addIssue({ code: 'custom', path: ['fecha_nacimiento'], message: 'Fecha de nacimiento inválida' })
     } else if (esMenor(d.fecha_nacimiento) && !d.tutor_nombre) {
-      ctx.addIssue({ code: 'custom', path: ['tutor_nombre'], message: 'Para menores de edad, el nombre del padre o tutor es obligatorio' })
+      ctx.addIssue({ code: 'custom', path: ['tutor_nombre'], message: 'Para menores de edad, el nombre del padre, madre o tutor es obligatorio' })
     }
-    if (d.motivos.includes('socioeconomico')) {
+    if (d.socioeconomico) {
       if (!d.socio.ingreso_rango) ctx.addIssue({ code: 'custom', path: ['socio', 'ingreso_rango'], message: 'Indica el ingreso mensual del hogar' })
       if (!d.socio.situacion) ctx.addIssue({ code: 'custom', path: ['socio', 'situacion'], message: 'Describe brevemente tu situación' })
-    }
-    if (d.motivos.includes('desempeno') && !d.desempeno.logros && !d.desempeno.record) {
-      ctx.addIssue({ code: 'custom', path: ['desempeno', 'logros'], message: 'Indica tu récord o tus logros deportivos' })
     }
   })
 

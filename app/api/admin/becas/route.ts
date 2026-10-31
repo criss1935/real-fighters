@@ -5,7 +5,7 @@ import { requireAdmin } from '@/lib/require-admin'
 export const dynamic = 'force-dynamic'
 
 const LIST_COLS =
-  'id, created_at, convocatoria, tipo, motivos, nombre, telefono, email, fecha_nacimiento, es_menor, filial, disciplina, es_alumno, estatus, porcentaje_beca, revisado_at'
+  'id, created_at, convocatoria, perfil, motivos, nombre, telefono, email, fecha_nacimiento, es_menor, filial, disciplina, nivel_educativo, grado, promedio, estatus, porcentaje_beca, revisado_at'
 
 export async function GET(req: NextRequest) {
   if (!hasServiceRole) return NextResponse.json({ error: 'Falta configurar SUPABASE_SERVICE_ROLE_KEY en el servidor' }, { status: 503 })
