@@ -18,7 +18,7 @@ export default function AvisoPrivacidadPage() {
           Aviso de Privacidad
         </h1>
         <p className="text-sm text-gray-500 mb-10">
-          Última actualización: septiembre 2026
+          Última actualización: octubre 2026
         </p>
 
         <div className="prose prose-gray max-w-none space-y-8">
@@ -60,6 +60,28 @@ export default function AvisoPrivacidadPage() {
                 asistes y estatus de pago.
               </li>
             </ul>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">
+              Solicitudes de beca
+            </h2>
+            <p className="text-gray-700 leading-relaxed mb-3">
+              Si solicitas una beca, además recabamos tu fecha de nacimiento,
+              nombre del padre, madre o tutor (en caso de menores de edad),
+              ocupación, número de dependientes económicos, rango de ingreso
+              mensual del hogar, descripción de tu situación, trayectoria
+              deportiva y los comprobantes que decidas adjuntar.
+            </p>
+            <p className="text-gray-700 leading-relaxed">
+              Usamos estos datos únicamente para evaluar tu solicitud y
+              comunicarte el resultado. Solo el personal administrativo
+              autorizado tiene acceso a ellos, se almacenan en un repositorio
+              privado y conservamos la solicitud y sus comprobantes hasta 12
+              meses después del cierre de la convocatoria, salvo que nos pidas
+              eliminarlos antes. Al enviar la solicitud otorgas tu
+              consentimiento expreso para este tratamiento.
+            </p>
           </section>
 
           <section>

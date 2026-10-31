@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { ExportAlumnosButton, ExpedienteModal, useExpedientes } from '@/components/admin/ExpedienteTools'
-import { Users, Calendar, Trophy, LogOut, UserCircle, Newspaper, Eye, Trash2, Edit, X, Upload, Home, BookOpen, DollarSign, ShoppingBag } from 'lucide-react';
+import BecasTab from '@/components/admin/BecasTab'
+import { Users, Calendar, Trophy, LogOut, UserCircle, Newspaper, Eye, Trash2, Edit, X, Upload, Home, BookOpen, DollarSign, ShoppingBag, Award } from 'lucide-react';
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import RichTextEditor from '@/components/RichTextEditor';
 import { uploadImage, validateImageFile, deleteImage } from '@/lib/upload-image';
 
-type TabType = 'students' | 'fighters' | 'events' | 'fights' | 'announcements' | 'filiales' | 'classes' | 'plans' | 'tienda';
+type TabType = 'students' | 'fighters' | 'events' | 'fights' | 'announcements' | 'filiales' | 'classes' | 'plans' | 'tienda' | 'becas';
 
 const CATEGORIAS_PRODUCTO = ['Equipo', 'Ropa', 'Protección', 'Uniformes', 'Accesorios', 'Suplementos'] as const;
 
@@ -1192,6 +1193,7 @@ export default function AdminPage() {
           <div className="border-b border-gray-200 overflow-x-auto">
             <div className="flex space-x-2 px-6 min-w-max">
               <TabButton id="students" label="Alumnos" icon={Users} />
+              <TabButton id="becas" label="Becas" icon={Award} />
               <TabButton id="fighters" label="Peleadores" icon={Trophy} />
               <TabButton id="filiales" label="Filiales" icon={Home} />
               <TabButton id="classes" label="Clases" icon={BookOpen} />
@@ -1212,6 +1214,9 @@ export default function AdminPage() {
                 {message.text}
               </div>
             )}
+
+            {/* BECAS */}
+            {activeTab === 'becas' && <BecasTab />}
 
             {/* STUDENTS */}
             {activeTab === 'students' && (
