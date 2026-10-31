@@ -67,18 +67,22 @@ export default function AvisoPrivacidadPage() {
               Solicitudes de beca
             </h2>
             <p className="text-gray-700 leading-relaxed mb-3">
-              Si solicitas una beca, además recabamos tu fecha de nacimiento,
-              nombre del padre, madre o tutor (en caso de menores de edad),
-              ocupación, número de dependientes económicos, rango de ingreso
-              mensual del hogar, descripción de tu situación, trayectoria
-              deportiva y los comprobantes que decidas adjuntar.
+              Si solicitas una beca RFM, además recabamos tu fecha de
+              nacimiento, nombre del padre, madre o tutor (en caso de menores
+              de edad), nivel educativo, escuela, grado o semestre, promedio,
+              la descripción de tu esfuerzo escolar, tu motivación y, solo si
+              lo indicas como motivo, datos socioeconómicos del hogar
+              (ocupación, dependientes, rango de ingreso y situación), así
+              como los comprobantes escolares que decidas adjuntar.
             </p>
             <p className="text-gray-700 leading-relaxed">
-              Usamos estos datos únicamente para evaluar tu solicitud y
-              comunicarte el resultado. Solo el personal administrativo
+              Usamos estos datos únicamente para que el Comité de Becas evalúe
+              tu solicitud y para comunicarte el resultado. El informe de
+              transparencia del programa solo publica cifras generales, nunca
+              nombres, teléfonos, calificaciones ni documentos. Solo el personal administrativo
               autorizado tiene acceso a ellos, se almacenan en un repositorio
               privado y conservamos la solicitud y sus comprobantes hasta 12
-              meses después del cierre de la convocatoria, salvo que nos pidas
+              meses después de que termine la vigencia de la beca, salvo que nos pidas
               eliminarlos antes. Al enviar la solicitud otorgas tu
               consentimiento expreso para este tratamiento.
             </p>
