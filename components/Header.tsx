@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { Menu, X } from 'lucide-react'
+import { BecasNavBadge, BecasTopBar } from '@/components/BecasPromo'
 
 export default function Header() {
   const pathname = usePathname()
@@ -15,6 +16,7 @@ export default function Header() {
   
   const navLinks = [
     { href: '/', label: 'Inicio' },
+    { href: '/becas', label: 'Becas' },
     { href: '/clases', label: 'Clases' },
     { href: '/fighters', label: 'Peleadores' },
     { href: '/students', label: 'Alumnos' },
@@ -34,6 +36,7 @@ export default function Header() {
   
   return (
     <header className="bg-gray-950 text-white shadow-lg sticky top-0 z-50">
+      {!pathname?.startsWith('/becas') && !pathname?.startsWith('/admin') && <BecasTopBar />}
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
@@ -64,6 +67,7 @@ export default function Header() {
                 }`}
               >
                 {link.label}
+                {link.href === '/becas' && <BecasNavBadge />}
               </Link>
             ))}
           </nav>
@@ -96,6 +100,7 @@ export default function Header() {
                   }`}
                 >
                   {link.label}
+                  {link.href === '/becas' && <BecasNavBadge />}
                 </Link>
               ))}
             </nav>

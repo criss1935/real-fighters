@@ -3,6 +3,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import PlansSection from '@/components/PlansSection'
 import ClassesSection from '@/components/ClassesSection'
+import { BecasHeroPill, BecasHomeBanner } from '@/components/BecasPromo'
 
 export default function HomePage() {
   return (
@@ -20,6 +21,7 @@ export default function HomePage() {
         </div>
 
         <div className="relative z-10 text-center px-4 max-w-5xl mx-auto">
+          <BecasHeroPill />
           <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
             Bienvenidos a<br />Real Fighters México
           </h1>
@@ -37,6 +39,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <BecasHomeBanner />
 
       <section className="py-20 bg-black">
         <div className="container mx-auto px-4">
