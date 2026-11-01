@@ -9,7 +9,8 @@ export const metadata: Metadata = {
     'Tu esfuerzo abre camino. 10 becas anuales para estudiantes que quieran entrenar en Real Fighters México con el Plan #RFM.',
 }
 
-export const revalidate = 60
+// Dinámica: la apertura/cierre depende de la hora exacta (CDMX), no de una versión cacheada
+export const dynamic = 'force-dynamic'
 
 async function load() {
   const { data } = await supabase.from('config').select('key, data').in('key', ['becas', 'classes', 'filiales'])
